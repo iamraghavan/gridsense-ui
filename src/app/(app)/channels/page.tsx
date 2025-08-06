@@ -1,5 +1,6 @@
 
-import { Button } from "@/components/ui/button";
+'use client';
+
 import {
   Card,
   CardContent,
@@ -16,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Trash2, X } from "lucide-react";
 import type { Channel } from "@/types";
 import {
   DropdownMenu,
@@ -25,15 +26,217 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from "react";
+import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from "@/lib/constants";
+import { useToast } from "@/hooks/use-toast";
 
-const mockChannels: Channel[] = [
-    { id: 'ch_1', name: 'Weather Station', description: 'Tracks temperature and humidity in the main office.', createdAt: '2023-10-01T12:00:00Z', field1: 'Temperature', field2: 'Humidity', field3: 'Pressure', field4: '', field5: '', field6: '', field7: '', field8: ''},
-    { id: 'ch_2', name: 'Greenhouse Monitor', description: 'Monitors soil moisture and light levels.', createdAt: '2023-10-05T14:30:00Z', field1: 'Soil Moisture', field2: 'Light Lux', field3: 'Air Temp', field4: 'Air Humidity', field5: '', field6: '', field7: '', field8: ''},
-    { id: 'ch_3', name: 'Server Room Vitals', description: 'Keeps an eye on server room temperature and door status.', createdAt: '2023-10-10T09:00:00Z', field1: 'Temperature', field2: 'Door Sensor', field3: '', field4: '', field5: '', field6: '', field7: '', field8: ''},
-    { id: 'ch_4', name: 'Aquaponics System', description: 'pH and water level for the aquaponics tank.', createdAt: '2023-10-15T18:00:00Z', field1: 'pH Level', field2: 'Water Level', field3: 'Water Temp', field4: '', field5: '', field6: '', field7: '', field8: ''},
-];
+async function getChannels(token: string | undefined): Promise<Channel[]> {
+  if (!token) return [];
+  try {
+    const res = await fetch(`${API_URL}/channels`, {
+      headers: {
+        "x-api-key": API_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch (error) {
+    console.error("Failed to fetch channels", error);
+    return [];
+  }
+}
+
+async function createChannel(channelData: {
+    projectName: string;
+    description: string;
+    fields: { name: string }[];
+  }, token: string | undefined): Promise<any> {
+  if (!token) throw new Error("Authentication token not found.");
+  const res = await fetch(`${API_URL}/channels`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(channelData),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Failed to create channel.");
+  }
+  return res.json();
+}
+
+function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [description, setDescription] = useState("");
+  const [fields, setFields] = useState([{ name: "" }]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const token = document.cookie.split('; ').find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))?.split('=')[1];
+
+  const handleAddField = () => {
+    if (fields.length < 8) {
+      setFields([...fields, { name: "" }]);
+    }
+  };
+
+  const handleRemoveField = (index: number) => {
+    const newFields = fields.filter((_, i) => i !== index);
+    setFields(newFields);
+  };
+
+  const handleFieldNameChange = (index: number, value: string) => {
+    const newFields = fields.map((field, i) => i === index ? { name: value } : field);
+    setFields(newFields);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const filteredFields = fields.filter(f => f.name.trim() !== "");
+      if (!projectName || filteredFields.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: "Project Name and at least one Field are required.",
+        });
+        return;
+      }
+
+      await createChannel({ projectName, description, fields: filteredFields }, token);
+      toast({
+        title: "Channel Created!",
+        description: "Your new channel has been created successfully.",
+      });
+      onChannelCreated(); // Refresh the channel list
+      setOpen(false); // Close the dialog
+      // Reset form
+      setProjectName("");
+      setDescription("");
+      setFields([{ name: "" }]);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An unexpected error occurred.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Create Channel
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[625px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Create New Channel</DialogTitle>
+            <DialogDescription>
+              Configure the details for your new data channel.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="project-name">Project Name</Label>
+              <Input
+                id="project-name"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Fields (up to 8)</Label>
+              {fields.map((field, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    placeholder={`Field ${index + 1}`}
+                    value={field.name}
+                    onChange={(e) => handleFieldNameChange(index, e.target.value)}
+                  />
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveField(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {fields.length < 8 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddField}
+                  className="mt-2"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Field
+                </Button>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Channel"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 export default function ChannelsPage() {
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const token = document.cookie.split('; ').find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))?.split('=')[1];
+
+  const fetchChannels = () => {
+    getChannels(token).then(setChannels);
+  };
+
+  useEffect(() => {
+    fetchChannels();
+  }, []);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -44,10 +247,7 @@ export default function ChannelsPage() {
           </CardDescription>
         </div>
         <div>
-            <Button>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Create Channel
-            </Button>
+            <CreateChannelDialog onChannelCreated={fetchChannels} />
         </div>
       </CardHeader>
       <CardContent>
@@ -64,13 +264,13 @@ export default function ChannelsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockChannels.map((channel) => (
-              <TableRow key={channel.id}>
-                <TableCell className="font-medium">{channel.name}</TableCell>
+            {channels.map((channel) => (
+              <TableRow key={channel.channel_id}>
+                <TableCell className="font-medium">{channel.projectName}</TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground truncate max-w-xs">{channel.description}</TableCell>
                 <TableCell className="hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
-                        {[channel.field1, channel.field2, channel.field3, channel.field4, channel.field5, channel.field6, channel.field7, channel.field8].map((field, index) => field ? <Badge key={index} variant="outline">{field}</Badge> : null)}
+                        {channel.fields.map((field, index) => field.name ? <Badge key={field._id || index} variant="outline">{field.name}</Badge> : null)}
                     </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
@@ -94,6 +294,13 @@ export default function ChannelsPage() {
                 </TableCell>
               </TableRow>
             ))}
+             {channels.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                        No channels found. Create your first one to get started.
+                    </TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

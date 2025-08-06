@@ -1,4 +1,6 @@
 
+'use client';
+
 import { cookies } from "next/headers";
 import {
   Card,
@@ -18,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, MoreHorizontal } from "lucide-react";
+import { ArrowRight, MoreHorizontal, Rss, HelpCircle } from "lucide-react";
 import type { Channel } from "@/types";
 import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from "@/lib/constants";
 import {
@@ -28,9 +30,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
 
-async function getChannels(): Promise<Channel[]> {
-  const token = cookies().get(AUTH_TOKEN_COOKIE_NAME)?.value;
+async function getChannels(token: string | undefined): Promise<Channel[]> {
   if (!token) {
     return [];
   }
@@ -41,7 +43,7 @@ async function getChannels(): Promise<Channel[]> {
         "x-api-key": API_KEY,
         "Authorization": `Bearer ${token}`,
       },
-      cache: 'no-store', // Ensure fresh data
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -57,8 +59,27 @@ async function getChannels(): Promise<Channel[]> {
   }
 }
 
-export default async function DashboardPage() {
-  const channels = await getChannels();
+
+export default function DashboardPage() {
+    const [channels, setChannels] = useState<Channel[]>([]);
+    const [token, setToken] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        // Since we are in a client component, we access cookies via document.cookie
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
+            ?.split('=')[1];
+        setToken(cookieValue);
+    }, []);
+
+    useEffect(() => {
+        if (token) {
+            getChannels(token).then(setChannels);
+        }
+    }, [token]);
+
+    const totalRequests = 0; // Placeholder until API provides this data
 
   return (
     <div className="space-y-6">
@@ -74,6 +95,29 @@ export default async function DashboardPage() {
                     <Link href="/channels">Manage Channels <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
             </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Channels</CardTitle>
+                    <Rss className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{channels.length}</div>
+                    <p className="text-xs text-muted-foreground">You have {channels.length} channels in total.</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{totalRequests}</div>
+                    <p className="text-xs text-muted-foreground">Total data points from all channels.</p>
+                </CardContent>
+            </Card>
         </div>
 
       <Card>
