@@ -65,7 +65,8 @@ async function getChannelHistory(channelId: string, token: string): Promise<any[
             console.error(`Failed to fetch history for channel ${channelId}:`, res.statusText);
             return [];
         }
-        return res.json();
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
     } catch (error) {
         console.error(`Error fetching history for channel ${channelId}:`, error);
         return [];
@@ -98,6 +99,8 @@ export default function DashboardPage() {
                 console.error("Failed to parse user cookie:", e)
                 setUser(null)
             }
+        } else {
+            setIsLoading(false);
         }
     }, []);
 
@@ -105,23 +108,23 @@ export default function DashboardPage() {
         const fetchDashboardData = async () => {
             if (token && user?.id) {
                 setIsLoading(true);
-                const fetchedChannels = await getChannels(user.id, token);
-                setChannels(fetchedChannels);
+                try {
+                    const fetchedChannels = await getChannels(user.id, token);
+                    setChannels(fetchedChannels);
 
-                const historyPromises = fetchedChannels.map(channel => 
-                    getChannelHistory(channel.channel_id, token)
-                );
-                const histories = await Promise.all(historyPromises);
-                
-                const total = histories.reduce((acc, history) => acc + (Array.isArray(history) ? history.length : 0), 0);
+                    const historyPromises = fetchedChannels.map(channel => 
+                        getChannelHistory(channel.channel_id, token)
+                    );
+                    const histories = await Promise.all(historyPromises);
+                    
+                    const total = histories.reduce((acc, history) => acc + history.length, 0);
 
-                setTotalRequests(total);
-                setIsLoading(false);
-            } else if (token === undefined) {
-                 // Still waiting for token from useEffect
-            } else {
-                 // No token or user, stop loading
-                setIsLoading(false);
+                    setTotalRequests(total);
+                } catch (error) {
+                    console.error("Failed to fetch dashboard data", error)
+                } finally {
+                    setIsLoading(false);
+                }
             }
         };
         

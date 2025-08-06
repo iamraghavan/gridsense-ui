@@ -260,6 +260,8 @@ export default function ChannelsPage() {
                 console.error("Failed to parse user cookie:", e);
                 setUser(null);
             }
+        } else {
+             setIsLoading(false);
         }
     }, []);
 
@@ -273,11 +275,6 @@ export default function ChannelsPage() {
   useEffect(() => {
     if (token && user?.id) {
         fetchChannels();
-    } else if (token === undefined) {
-        // Still waiting for token
-    } else {
-        // No token or user, stop loading
-        setIsLoading(false);
     }
   }, [token, user]);
 
