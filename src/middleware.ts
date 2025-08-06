@@ -11,8 +11,8 @@ export function middleware(request: NextRequest) {
   const guestRoutes = ['/login', '/register', '/'];
 
   if (token) {
-    // If user is authenticated and tries to access login, register, or the marketing home page, redirect to dashboard
-    if (guestRoutes.some(route => pathname === route || (route !== '/' && pathname.startsWith(route)))) {
+    // If user is authenticated and tries to access a guest route, redirect to dashboard
+    if (guestRoutes.includes(pathname)) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   } else {

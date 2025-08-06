@@ -117,8 +117,8 @@ export async function register(prevState: AuthState, formData: FormData): Promis
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 1 week
       };
-
-      // Handle the case where the user object might be nested
+      
+      // The API nests the user object on register, so we handle it here.
       const userData = data.user.user ? data.user.user : data.user;
       const user: User = { id: userData._id, name: userData.name, email: userData.email };
 

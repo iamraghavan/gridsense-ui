@@ -117,7 +117,10 @@ export default function DashboardPage() {
 
                 setTotalRequests(total);
                 setIsLoading(false);
+            } else if (token === undefined) {
+                 // Still waiting for token from useEffect
             } else {
+                 // No token or user, stop loading
                 setIsLoading(false);
             }
         };

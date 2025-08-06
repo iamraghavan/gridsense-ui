@@ -5,7 +5,6 @@ import type { User } from '@/types';
 
 // This function needs to be async to use `cookies()`
 export async function getUser(): Promise<{ user: User | null }> {
-  // `cookies()` returns a promise-like object, it must be awaited.
   const cookieStore = cookies();
   
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
