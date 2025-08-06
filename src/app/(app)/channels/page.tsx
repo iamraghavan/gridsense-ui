@@ -53,7 +53,7 @@ async function getChannels(userId: string, token: string): Promise<Channel[]> {
       cache: "no-store",
     });
     if (!res.ok) {
-        console.error("Failed to fetch channels:", res.statusText);
+        console.error("Failed to fetch channels:", res.status, await res.text());
         return [];
     }
     const data = await res.json();
@@ -274,8 +274,12 @@ export default function ChannelsPage() {
   useEffect(() => {
      if (token && user?.id) {
         fetchChannels();
-    } else if (user === null && token === undefined) {
-        setIsLoading(false);
+    } else if (user === null || token === undefined) {
+        if (document.cookie.includes(AUTH_TOKEN_COOKIE_NAME)) {
+            // Cookies might be loading
+        } else {
+            setIsLoading(false);
+        }
     }
   }, [token, user]);
 
@@ -356,3 +360,5 @@ export default function ChannelsPage() {
     </Card>
   );
 }
+
+    

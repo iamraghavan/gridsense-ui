@@ -41,39 +41,21 @@ async function getChannels(userId: string, token: string): Promise<{ count: numb
       cache: "no-store",
     });
     if (!res.ok) {
-        console.error("Failed to fetch channels:", res.statusText);
+        console.error("Failed to fetch channels:", res.status, await res.text());
         return { count: 0, channels: [] };
     }
-    // The API returns an object with a count and a channels array.
     const data = await res.json();
-    return data;
+    // Ensure the response has the expected structure
+    if (data && typeof data.count === 'number' && Array.isArray(data.channels)) {
+        return data;
+    }
+    console.error("Unexpected API response structure:", data);
+    return { count: 0, channels: [] };
   } catch (error) {
     console.error("Failed to fetch channels", error);
     return { count: 0, channels: [] };
   }
 }
-
-async function getChannelHistory(channelId: string, token: string): Promise<any[]> {
-    try {
-        const res = await fetch(`${API_URL}/sensors/${channelId}/history`, {
-             headers: {
-                "x-api-key": API_KEY,
-                Authorization: `Bearer ${token}`,
-            },
-            cache: "no-store",
-        });
-        if (!res.ok) {
-            console.error(`Failed to fetch history for channel ${channelId}:`, res.statusText);
-            return [];
-        }
-        const data = await res.json();
-        return Array.isArray(data) ? data : [];
-    } catch (error) {
-        console.error(`Error fetching history for channel ${channelId}:`, error);
-        return [];
-    }
-}
-
 
 export default function DashboardPage() {
     const [channels, setChannels] = useState<Channel[]>([]);
@@ -95,7 +77,8 @@ export default function DashboardPage() {
             ?.split('=')[1];
         if (userCookie) {
             try {
-                setUser(JSON.parse(decodeURIComponent(userCookie)));
+                const parsedUser = JSON.parse(decodeURIComponent(userCookie));
+                setUser(parsedUser);
             } catch (e) {
                 console.error("Failed to parse user cookie:", e)
                 setUser(null)
@@ -111,7 +94,6 @@ export default function DashboardPage() {
                     const { channels: fetchedChannels } = await getChannels(user.id, token);
                     setChannels(fetchedChannels);
 
-                    // The backend now provides totalEntries, so we can sum them up.
                     const total = fetchedChannels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
                     setTotalRequests(total);
 
@@ -120,13 +102,20 @@ export default function DashboardPage() {
                 } finally {
                     setIsLoading(false);
                 }
-            } else if (user === null && token === undefined) {
-                // This case handles when cookies are not available, to stop loading.
-                setIsLoading(false);
+            } else if (user === null || token === undefined) {
+                 // Handles case where cookies might not be ready on first render or user is logged out
+                if (document.cookie.includes(AUTH_TOKEN_COOKIE_NAME)) {
+                    // Cookies might be loading, don't set loading to false yet
+                } else {
+                    setIsLoading(false);
+                }
             }
         };
         
-        fetchDashboardData();
+        // Only fetch when we have the necessary details
+        if (token && user?.id) {
+            fetchDashboardData();
+        }
     }, [token, user]);
 
   return (
@@ -246,3 +235,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
