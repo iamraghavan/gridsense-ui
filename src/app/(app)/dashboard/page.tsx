@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 
-async function getChannels(userId: string, token: string): Promise<Channel[]> {
+async function getChannels(userId: string, token: string): Promise<{ count: number, channels: Channel[] }> {
   try {
     const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
@@ -42,14 +42,14 @@ async function getChannels(userId: string, token: string): Promise<Channel[]> {
     });
     if (!res.ok) {
         console.error("Failed to fetch channels:", res.statusText);
-        return [];
+        return { count: 0, channels: [] };
     }
+    // The API returns an object with a count and a channels array.
     const data = await res.json();
-    // API returns { count: number, channels: [...] }, so we extract the channels array
-    return Array.isArray(data.channels) ? data.channels : [];
+    return data;
   } catch (error) {
     console.error("Failed to fetch channels", error);
-    return [];
+    return { count: 0, channels: [] };
   }
 }
 
@@ -101,10 +101,6 @@ export default function DashboardPage() {
                 setUser(null)
             }
         }
-        // We set loading to false only if we have no auth info
-        if (!userCookie || !cookieValue) {
-            setIsLoading(false);
-        }
     }, []);
 
     useEffect(() => {
@@ -112,22 +108,11 @@ export default function DashboardPage() {
             if (token && user?.id) {
                 setIsLoading(true);
                 try {
-                    const fetchedChannels = await getChannels(user.id, token);
+                    const { channels: fetchedChannels } = await getChannels(user.id, token);
                     setChannels(fetchedChannels);
 
-                    // The backend now provides totalEntries, let's use that.
-                    // If not present, we fall back to fetching history.
-                    let total = 0;
-                    if (fetchedChannels.every(c => c.totalEntries !== undefined)) {
-                         total = fetchedChannels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
-                    } else {
-                        const historyPromises = fetchedChannels.map(channel => 
-                            getChannelHistory(channel.channel_id, token)
-                        );
-                        const histories = await Promise.all(historyPromises);
-                        total = histories.reduce((acc, history) => acc + history.length, 0);
-                    }
-                    
+                    // The backend now provides totalEntries, so we can sum them up.
+                    const total = fetchedChannels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
                     setTotalRequests(total);
 
                 } catch (error) {
@@ -135,12 +120,13 @@ export default function DashboardPage() {
                 } finally {
                     setIsLoading(false);
                 }
+            } else if (user === null && token === undefined) {
+                // This case handles when cookies are not available, to stop loading.
+                setIsLoading(false);
             }
         };
         
-        if (token && user?.id) {
-            fetchDashboardData();
-        }
+        fetchDashboardData();
     }, [token, user]);
 
   return (

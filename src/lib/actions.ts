@@ -65,7 +65,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
         maxAge: 60 * 60 * 24 * 7, // 1 week
       };
       
-      const user: User = { id: data._id, name: data.name, email: data.email, apiKey: data.apiKey };
+      const user: User = { id: data._id, name: data.name, email: data.email, apiKey: data.apiKey, createdAt: data.createdAt };
       
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
@@ -120,7 +120,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       
       // The API nests the user object on register, so we handle it here.
       const userData = data.user;
-      const user: User = { id: userData._id, name: userData.name, email: userData.email, apiKey: userData.apiKey };
+      const user: User = { id: userData._id, name: userData.name, email: userData.email, apiKey: userData.apiKey, createdAt: userData.createdAt };
 
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);

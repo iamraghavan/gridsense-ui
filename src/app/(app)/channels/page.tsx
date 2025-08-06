@@ -262,10 +262,6 @@ export default function ChannelsPage() {
                 setUser(null);
             }
         }
-        // Set loading to false only if we have no auth info
-        if (!userCookie || !cookieValue) {
-             setIsLoading(false);
-        }
     }, []);
 
   const fetchChannels = () => {
@@ -276,8 +272,10 @@ export default function ChannelsPage() {
   };
 
   useEffect(() => {
-    if (token && user?.id) {
+     if (token && user?.id) {
         fetchChannels();
+    } else if (user === null && token === undefined) {
+        setIsLoading(false);
     }
   }, [token, user]);
 

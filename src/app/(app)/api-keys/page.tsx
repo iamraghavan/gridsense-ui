@@ -13,30 +13,8 @@ import type { ApiKey, User } from "@/types";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
+import { USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
-
-async function getUserDetails(userId: string, token: string): Promise<User | null> {
-    try {
-        const res = await fetch(`${API_URL}/auth/user/${userId}`, {
-            headers: {
-                "x-api-key": API_KEY,
-                Authorization: `Bearer ${token}`,
-            },
-            cache: "no-store",
-        });
-        if (!res.ok) {
-            console.error("Failed to fetch user data:", res.statusText);
-            return null;
-        }
-        const userData = await res.json();
-        return userData;
-    } catch (error) {
-        console.error("Error fetching user details:", error);
-        return null;
-    }
-}
-
 
 function ApiKeyCard({ apiKey, isLoading }: { apiKey: ApiKey | null, isLoading: boolean }) {
     const [isVisible, setIsVisible] = useState(false);
@@ -115,53 +93,34 @@ function ApiKeyCard({ apiKey, isLoading }: { apiKey: ApiKey | null, isLoading: b
 export default function ApiKeysPage() {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState<string | undefined>(undefined);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const cookieValue = document.cookie
-        .split('; ')
-        .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
-        ?.split('=')[1];
-    setToken(cookieValue);
-
     const userCookie = document.cookie
         .split('; ')
         .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
         ?.split('=')[1];
+
     if (userCookie) {
         try {
-            setUser(JSON.parse(decodeURIComponent(userCookie)));
+            const parsedUser = JSON.parse(decodeURIComponent(userCookie));
+            setUser(parsedUser);
+            if (parsedUser.apiKey) {
+                 setApiKey({
+                    id: parsedUser.id, // Or a specific key ID if available
+                    name: "Your API Key",
+                    key: parsedUser.apiKey,
+                    createdAt: parsedUser.createdAt || new Date().toISOString()
+                });
+            }
         } catch (e) {
             console.error("Failed to parse user cookie:", e);
             setUser(null);
         }
     }
-    if (!userCookie || !cookieValue) {
-        setIsLoading(false);
-    }
+    setIsLoading(false);
   }, []);
 
-  useEffect(() => {
-    const fetchKey = async () => {
-        if (user?.id && token) {
-            setIsLoading(true);
-            const userDetails = await getUserDetails(user.id, token);
-            if (userDetails && userDetails.apiKey) {
-                setApiKey({
-                    id: userDetails.id, // Or a specific key ID if available
-                    name: "Your API Key",
-                    key: userDetails.apiKey,
-                    createdAt: userDetails.createdAt || new Date().toISOString()
-                });
-            }
-            setIsLoading(false);
-        }
-    };
-    if (user?.id && token) {
-      fetchKey();
-    }
-  }, [user, token]);
 
   return (
     <div className="space-y-6">
