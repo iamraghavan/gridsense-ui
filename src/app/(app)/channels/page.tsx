@@ -256,7 +256,9 @@ export default function ChannelsPage() {
   };
 
   useEffect(() => {
-    fetchChannels();
+    if (token) {
+        fetchChannels();
+    }
   }, [token]);
 
   return (
