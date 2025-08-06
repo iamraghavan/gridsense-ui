@@ -4,12 +4,13 @@ import { AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from './constants';
 import type { User } from '@/types';
 
 export async function getUser(): Promise<{ user: User | null }> {
-  const token = cookies().get(AUTH_TOKEN_COOKIE_NAME)?.value;
+  const cookieStore = cookies();
+  const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
   if (!token) {
     return { user: null };
   }
 
-  const userDetailsCookie = cookies().get(USER_DETAILS_COOKIE_NAME)?.value;
+  const userDetailsCookie = cookieStore.get(USER_DETAILS_COOKIE_NAME)?.value;
   if (!userDetailsCookie) {
     return { user: null };
   }
