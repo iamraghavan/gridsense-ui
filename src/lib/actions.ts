@@ -109,7 +109,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       return { message: data.message || 'Registration failed.' };
     }
     
-    if (data.token) {
+    if (data.token && data.user) {
       const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -124,7 +124,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
 
     } else {
-        return { message: 'Registration failed: No token received.' };
+        return { message: 'Registration failed: No token or user data received.' };
     }
 
   } catch (error) {
