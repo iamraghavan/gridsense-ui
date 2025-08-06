@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, Trash2, X } from "lucide-react";
+import { MoreHorizontal, PlusCircle, X } from "lucide-react";
 import type { Channel } from "@/types";
 import {
   DropdownMenu,
