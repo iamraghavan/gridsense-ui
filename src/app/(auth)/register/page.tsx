@@ -2,7 +2,7 @@
 'use client';
 
 import Link from "next/link";
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { register, type AuthState } from '@/lib/actions';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -22,7 +22,7 @@ function SubmitButton() {
 
 export default function RegisterPage() {
   const initialState: AuthState = {};
-  const [state, dispatch] = useFormState(register, initialState);
+  const [state, dispatch] = useActionState(register, initialState);
 
   return (
     <Card className="w-full max-w-sm">
