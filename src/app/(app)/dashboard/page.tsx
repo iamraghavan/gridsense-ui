@@ -105,17 +105,24 @@ export default function DashboardPage() {
                 setChannels(fetchedChannels);
 
                 let total = 0;
-                for (const channel of fetchedChannels) {
-                    const history = await getChannelHistory(channel.channel_id, token);
-                    total += history.length;
-                }
+                // Use Promise.all to fetch history for all channels concurrently
+                const historyPromises = fetchedChannels.map(channel => 
+                    getChannelHistory(channel.channel_id, token)
+                );
+                const histories = await Promise.all(historyPromises);
+                
+                // Sum up the lengths of all history arrays
+                total = histories.reduce((acc, history) => acc + history.length, 0);
+
                 setTotalRequests(total);
                 setIsLoading(false);
             });
-        } else {
-             if(!token) {
-              setIsLoading(false);
-            }
+        } else if (!token && user) {
+            // This case handles when user is set but token is not yet.
+            // Avoids setting loading to false prematurely.
+        } else if (!user) {
+            // If there's no user, we can stop loading.
+             setIsLoading(false);
         }
     }, [token, user]);
 

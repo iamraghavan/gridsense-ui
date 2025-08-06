@@ -276,10 +276,12 @@ export default function ChannelsPage() {
   useEffect(() => {
     if (token && user?.id) {
         fetchChannels();
-    } else {
-        if(!token){
-            setIsLoading(false);
-        }
+    } else if (!token && user) {
+        // This case handles when user is set but token is not yet.
+        // Avoids setting loading to false prematurely.
+    } else if (!user) {
+        // If there's no user, we can stop loading.
+        setIsLoading(false);
     }
   }, [token, user]);
 
