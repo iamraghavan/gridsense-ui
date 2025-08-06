@@ -1,6 +1,5 @@
 
-'use client';
-
+import { cookies } from "next/headers";
 import {
   Card,
   CardContent,
@@ -9,116 +8,143 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { Rss, Thermometer, Cpu, BarChart as BarChartIcon } from "lucide-react";
-import type { ChartConfig } from "@/components/ui/chart";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowRight, MoreHorizontal } from "lucide-react";
+import type { Channel } from "@/types";
+import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from "@/lib/constants";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const chartData: { month: string, value: number }[] = [
-  { month: "January", value: 186 },
-  { month: "February", value: 305 },
-  { month: "March", value: 237 },
-  { month: "April", value: 273 },
-  { month: "May", value: 209 },
-  { month: "June", value: 214 },
-  { month: "July", value: 345 },
-  { month: "August", value: 280 },
-  { month: "September", value: 250 },
-  { month: "October", value: 310 },
-  { month: "November", value: 290 },
-  { month: "December", value: 320 },
-];
+async function getChannels(): Promise<Channel[]> {
+  const token = cookies().get(AUTH_TOKEN_COOKIE_NAME)?.value;
+  if (!token) {
+    return [];
+  }
 
-const chartConfig = {
-  value: {
-    label: "Data Points",
-    color: "hsl(var(--primary))",
-  },
-} satisfies ChartConfig;
+  try {
+    const response = await fetch(`${API_URL}/channels`, {
+      headers: {
+        "x-api-key": API_KEY,
+        "Authorization": `Bearer ${token}`,
+      },
+      cache: 'no-store', // Ensure fresh data
+    });
 
-export default function DashboardPage() {
+    if (!response.ok) {
+      console.error("Failed to fetch channels:", response.statusText);
+      return [];
+    }
+
+    const channels = await response.json();
+    return channels;
+  } catch (error) {
+    console.error("Error fetching channels:", error);
+    return [];
+  }
+}
+
+export default async function DashboardPage() {
+  const channels = await getChannels();
+
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Channels</CardTitle>
-            <Rss className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              +2 since last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Temperature</CardTitle>
-            <Thermometer className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">24.5°C</div>
-            <p className="text-xs text-muted-foreground">
-              +1.2°C from yesterday
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Devices</CardTitle>
-            <Cpu className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">
-              +1 since last hour
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Data Points (24h)</CardTitle>
-            <BarChartIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">15,231</div>
-            <p className="text-xs text-muted-foreground">
-              +12.1% from last 24h
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-6">
+       <div className="flex items-center justify-between">
+            <div>
+                <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
+                <p className="text-muted-foreground">
+                    An overview of your channels and their latest activity.
+                </p>
+            </div>
+            <div>
+                <Button asChild>
+                    <Link href="/channels">Manage Channels <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+            </div>
+        </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Data Ingestion Overview</CardTitle>
-          <CardDescription>An overview of data points ingested per month.</CardDescription>
+          <CardTitle>Your Channels</CardTitle>
+          <CardDescription>
+            A list of all your configured IoT channels.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-            <BarChart accessibilityLayer data={chartData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                tickFormatter={(value) => value.slice(0, 3)}
-              />
-              <YAxis />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent indicator="dot" />}
-              />
-              <Bar dataKey="value" fill="var(--color-value)" radius={4} />
-            </BarChart>
-          </ChartContainer>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project Name</TableHead>
+                <TableHead className="hidden md:table-cell">Description</TableHead>
+                <TableHead className="hidden lg:table-cell">Last Update</TableHead>
+                <TableHead className="hidden lg:table-cell">Latest Data</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {channels.length > 0 ? (
+                channels.map((channel) => (
+                  <TableRow key={channel.channel_id}>
+                    <TableCell className="font-medium">{channel.projectName}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground truncate max-w-xs">{channel.description}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {channel.lastUpdate ? new Date(channel.lastUpdate).toLocaleString() : 'Never'}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {channel.latestData ? (
+                            Object.entries(channel.latestData).map(([key, value]) => (
+                                <Badge key={key} variant="outline" className="font-code">{`${key}: ${value}`}</Badge>
+                            ))
+                        ) : (
+                            <span className="text-muted-foreground text-xs">No data yet</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>View Channel</DropdownMenuItem>
+                          <DropdownMenuItem>View Data</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">
+                    No channels found.
+                    <Button variant="link" asChild><Link href="/channels">Create your first one!</Link></Button>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

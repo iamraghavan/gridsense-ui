@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   name: string;
@@ -6,18 +7,17 @@ export interface User {
 }
 
 export interface Channel {
-  id: string;
-  name: string;
+  _id: string;
+  channel_id: string;
+  userId: string;
+  projectName: string;
   description: string;
+  fields: { name: string; _id: string }[];
   createdAt: string;
-  field1: string;
-  field2: string;
-  field3: string;
-  field4: string;
-  field5: string;
-  field6: string;
-  field7: string;
-  field8: string;
+  updatedAt: string;
+  __v: number;
+  latestData: Record<string, any> | null;
+  lastUpdate: string | null;
 }
 
 export interface ApiKey {
