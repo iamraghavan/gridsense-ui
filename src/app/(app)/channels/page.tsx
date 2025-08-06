@@ -57,7 +57,8 @@ async function getChannels(userId: string, token: string): Promise<Channel[]> {
         return [];
     }
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    // API returns { count: number, channels: [...] }, so we extract the channels array
+    return Array.isArray(data.channels) ? data.channels : [];
   } catch (error) {
     console.error("Failed to fetch channels", error);
     return [];
@@ -260,7 +261,8 @@ export default function ChannelsPage() {
                 console.error("Failed to parse user cookie:", e);
                 setUser(null);
             }
-        } else {
+        }
+        if (!userCookie || !cookieValue) {
              setIsLoading(false);
         }
     }, []);
@@ -355,3 +357,5 @@ export default function ChannelsPage() {
     </Card>
   );
 }
+
+    

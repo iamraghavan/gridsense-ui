@@ -9,27 +9,88 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Copy, Eye, EyeOff, PlusCircle, Trash2 } from "lucide-react";
-import type { ApiKey } from "@/types";
-import { useState } from "react";
+import type { ApiKey, User } from "@/types";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const mockApiKeys: ApiKey[] = [
-    { id: 'key_1', name: 'Primary Ingestion Key', key: 'a0ea2188-ee2f-46d2-9661-310bed43c3bf', createdAt: '2023-09-15T10:00:00Z' },
-    { id: 'key_2', name: 'Grafana Dashboard Key', key: 'b1fb2299-ff3g-47e3-9772-310ced44d4cg', createdAt: '2023-10-20T11:20:00Z' },
-    { id: 'key_3', name: 'Mobile App Key', key: 'c2gc3300-gg4h-48f4-9883-310dfd45e5dh', createdAt: '2023-11-01T15:45:00Z' },
-];
+async function getUserApiKey(userId: string, token: string): Promise<ApiKey | null> {
+    try {
+        const res = await fetch(`${API_URL}/auth/user/${userId}`, {
+            headers: {
+                "x-api-key": API_KEY,
+                Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+        });
+        if (!res.ok) {
+            console.error("Failed to fetch user data:", res.statusText);
+            return null;
+        }
+        const userData = await res.json();
+        // The API returns the full user object including the apiKey
+        if (userData && userData.apiKey) {
+             return {
+                id: userData._id,
+                name: "Your API Key",
+                key: userData.apiKey,
+                createdAt: userData.createdAt || new Date().toISOString()
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching user api key:", error);
+        return null;
+    }
+}
 
-function ApiKeyCard({ apiKey }: { apiKey: ApiKey }) {
+
+function ApiKeyCard({ apiKey, isLoading }: { apiKey: ApiKey | null, isLoading: boolean }) {
     const [isVisible, setIsVisible] = useState(false);
     const { toast } = useToast();
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(apiKey.key);
-        toast({
-            title: "Copied to clipboard!",
-            description: "The API key has been copied to your clipboard.",
-        });
+        if (apiKey) {
+            navigator.clipboard.writeText(apiKey.key);
+            toast({
+                title: "Copied to clipboard!",
+                description: "The API key has been copied to your clipboard.",
+            });
+        }
+    }
+    
+    if (isLoading) {
+        return (
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-1/2" />
+                    <Skeleton className="h-4 w-1/3" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <Skeleton className="h-10 w-full" />
+                    <div className="flex items-center gap-2">
+                         <Skeleton className="h-10 w-full" />
+                         <Skeleton className="h-10 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    if (!apiKey) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>No API Key Found</CardTitle>
+                    <CardDescription>We could not retrieve your API key.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Please try refreshing the page or contact support.</p>
+                </CardContent>
+            </Card>
+        )
     }
 
     return (
@@ -50,9 +111,9 @@ function ApiKeyCard({ apiKey }: { apiKey: ApiKey }) {
                         <Copy className="h-4 w-4 mr-2" />
                         Copy Key
                     </Button>
-                    <Button variant="destructive" className="w-full">
+                    <Button variant="destructive" className="w-full" disabled>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        Revoke (soon)
                     </Button>
                 </div>
             </CardContent>
@@ -61,25 +122,70 @@ function ApiKeyCard({ apiKey }: { apiKey: ApiKey }) {
 }
 
 export default function ApiKeysPage() {
+  const [apiKey, setApiKey] = useState<ApiKey | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | undefined>(undefined);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
+        ?.split('=')[1];
+    setToken(cookieValue);
+
+    const userCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
+        ?.split('=')[1];
+    if (userCookie) {
+        try {
+            setUser(JSON.parse(decodeURIComponent(userCookie)));
+        } catch (e) {
+            console.error("Failed to parse user cookie:", e);
+            setUser(null);
+        }
+    }
+    if (!userCookie || !cookieValue) {
+        setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchKey = async () => {
+        if (user?.id && token) {
+            setIsLoading(true);
+            const key = await getUserApiKey(user.id, token);
+            setApiKey(key);
+            setIsLoading(false);
+        }
+    };
+    if (user?.id && token) {
+      fetchKey();
+    }
+  }, [user, token]);
+
   return (
     <div className="space-y-6">
         <div className="flex items-center justify-between">
             <div>
                 <h1 className="text-2xl font-bold font-headline">API Keys</h1>
                 <p className="text-muted-foreground">
-                    Manage API keys for programmatic access to your data.
+                    Your API key for programmatic access to your data.
                 </p>
             </div>
             <div>
-                <Button>
+                <Button disabled>
                     <PlusCircle className="h-4 w-4 mr-2" />
-                    Generate New Key
+                    Generate New Key (soon)
                 </Button>
             </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {mockApiKeys.map((key) => <ApiKeyCard key={key.id} apiKey={key} />)}
+             <ApiKeyCard apiKey={apiKey} isLoading={isLoading} />
         </div>
     </div>
   );
 }
+
+    
