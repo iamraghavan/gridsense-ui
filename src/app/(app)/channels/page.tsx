@@ -43,8 +43,7 @@ import { useEffect, useState } from "react";
 import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 
-async function getChannels(userId: string, token: string | undefined): Promise<Channel[]> {
-  if (!token || !userId) return [];
+async function getChannels(userId: string, token: string): Promise<Channel[]> {
   try {
     const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
@@ -69,8 +68,7 @@ async function createChannel(channelData: {
     projectName: string;
     description: string;
     fields: { name: string; unit: string }[];
-  }, token: string | undefined): Promise<any> {
-  if (!token) throw new Error("Authentication token not found.");
+  }, token: string): Promise<any> {
   const res = await fetch(`${API_URL}/channels`, {
     method: "POST",
     headers: {
@@ -87,23 +85,13 @@ async function createChannel(channelData: {
   return res.json();
 }
 
-function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => void }) {
+function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: () => void, token: string | undefined }) {
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
   const [fields, setFields] = useState([{ name: "", unit: "" }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const [token, setToken] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
-        const cookieValue = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
-            ?.split('=')[1];
-        setToken(cookieValue);
-    }, []);
-
 
   const handleAddField = () => {
     if (fields.length < 8) {
@@ -123,6 +111,10 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to create a channel." });
+        return;
+    }
     setIsSubmitting(true);
     try {
       const filteredFields = fields.filter(f => f.name.trim() !== "");
@@ -262,7 +254,12 @@ export default function ChannelsPage() {
             .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
             ?.split('=')[1];
         if (userCookie) {
-            setUser(JSON.parse(decodeURIComponent(userCookie)));
+            try {
+                setUser(JSON.parse(decodeURIComponent(userCookie)));
+            } catch (e) {
+                console.error("Failed to parse user cookie:", e);
+                setUser(null);
+            }
         }
     }, []);
 
@@ -276,11 +273,7 @@ export default function ChannelsPage() {
   useEffect(() => {
     if (token && user?.id) {
         fetchChannels();
-    } else if (!token && user) {
-        // This case handles when user is set but token is not yet.
-        // Avoids setting loading to false prematurely.
-    } else if (!user) {
-        // If there's no user, we can stop loading.
+    } else {
         setIsLoading(false);
     }
   }, [token, user]);
@@ -295,7 +288,7 @@ export default function ChannelsPage() {
           </CardDescription>
         </div>
         <div>
-            <CreateChannelDialog onChannelCreated={fetchChannels} />
+            <CreateChannelDialog onChannelCreated={fetchChannels} token={token} />
         </div>
       </CardHeader>
       <CardContent>

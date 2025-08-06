@@ -31,8 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 
-async function getChannels(userId: string, token: string | undefined): Promise<Channel[]> {
-  if (!token || !userId) return [];
+async function getChannels(userId: string, token: string): Promise<Channel[]> {
   try {
     const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
@@ -53,8 +52,7 @@ async function getChannels(userId: string, token: string | undefined): Promise<C
   }
 }
 
-async function getChannelHistory(channelId: string, token: string | undefined): Promise<any[]> {
-    if (!token) return [];
+async function getChannelHistory(channelId: string, token: string): Promise<any[]> {
     try {
         const res = await fetch(`${API_URL}/sensors/${channelId}/history`, {
              headers: {
@@ -94,36 +92,37 @@ export default function DashboardPage() {
             .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
             ?.split('=')[1];
         if (userCookie) {
-            setUser(JSON.parse(decodeURIComponent(userCookie)));
+            try {
+                setUser(JSON.parse(decodeURIComponent(userCookie)));
+            } catch (e) {
+                console.error("Failed to parse user cookie:", e)
+                setUser(null)
+            }
         }
     }, []);
 
     useEffect(() => {
-        if (token && user?.id) {
-            setIsLoading(true);
-            getChannels(user.id, token).then(async (fetchedChannels) => {
+        const fetchDashboardData = async () => {
+            if (token && user?.id) {
+                setIsLoading(true);
+                const fetchedChannels = await getChannels(user.id, token);
                 setChannels(fetchedChannels);
 
-                let total = 0;
-                // Use Promise.all to fetch history for all channels concurrently
                 const historyPromises = fetchedChannels.map(channel => 
                     getChannelHistory(channel.channel_id, token)
                 );
                 const histories = await Promise.all(historyPromises);
                 
-                // Sum up the lengths of all history arrays
-                total = histories.reduce((acc, history) => acc + history.length, 0);
+                const total = histories.reduce((acc, history) => acc + (Array.isArray(history) ? history.length : 0), 0);
 
                 setTotalRequests(total);
                 setIsLoading(false);
-            });
-        } else if (!token && user) {
-            // This case handles when user is set but token is not yet.
-            // Avoids setting loading to false prematurely.
-        } else if (!user) {
-            // If there's no user, we can stop loading.
-             setIsLoading(false);
-        }
+            } else {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchDashboardData();
     }, [token, user]);
 
   return (
@@ -150,7 +149,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{isLoading ? '...' : channels.length}</div>
-                    <p className="text-xs text-muted-foreground">You have {channels.length} channels in total.</p>
+                    <p className="text-xs text-muted-foreground">You have {isLoading ? '...' : channels.length} channels in total.</p>
                 </CardContent>
             </Card>
             <Card>
