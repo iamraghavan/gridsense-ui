@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
 
   if (token) {
     // If user is authenticated and tries to access login, register, or the marketing home page, redirect to dashboard
-    if (pathname.startsWith('/login') || pathname.startsWith('/register') || pathname === '/') {
+    if (guestRoutes.some(route => pathname === route || (route !== '/' && pathname.startsWith(route)))) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   } else {
