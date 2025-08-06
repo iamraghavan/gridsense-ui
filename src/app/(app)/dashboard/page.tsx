@@ -101,8 +101,7 @@ export default function DashboardPage() {
                 setUser(null)
             }
         }
-        // We set loading to false only after we attempt to get user/token
-        // The actual data loading will be handled in the next useEffect
+        // We set loading to false only if we have no auth info
         if (!userCookie || !cookieValue) {
             setIsLoading(false);
         }
@@ -116,14 +115,21 @@ export default function DashboardPage() {
                     const fetchedChannels = await getChannels(user.id, token);
                     setChannels(fetchedChannels);
 
-                    const historyPromises = fetchedChannels.map(channel => 
-                        getChannelHistory(channel.channel_id, token)
-                    );
-                    const histories = await Promise.all(historyPromises);
+                    // The backend now provides totalEntries, let's use that.
+                    // If not present, we fall back to fetching history.
+                    let total = 0;
+                    if (fetchedChannels.every(c => c.totalEntries !== undefined)) {
+                         total = fetchedChannels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
+                    } else {
+                        const historyPromises = fetchedChannels.map(channel => 
+                            getChannelHistory(channel.channel_id, token)
+                        );
+                        const histories = await Promise.all(historyPromises);
+                        total = histories.reduce((acc, history) => acc + history.length, 0);
+                    }
                     
-                    const total = histories.reduce((acc, history) => acc + history.length, 0);
-
                     setTotalRequests(total);
+
                 } catch (error) {
                     console.error("Failed to fetch dashboard data", error)
                 } finally {
@@ -254,5 +260,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

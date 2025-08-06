@@ -262,6 +262,7 @@ export default function ChannelsPage() {
                 setUser(null);
             }
         }
+        // Set loading to false only if we have no auth info
         if (!userCookie || !cookieValue) {
              setIsLoading(false);
         }
@@ -357,5 +358,3 @@ export default function ChannelsPage() {
     </Card>
   );
 }
-
-    

@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 
-async function getUserApiKey(userId: string, token: string): Promise<ApiKey | null> {
+async function getUserDetails(userId: string, token: string): Promise<User | null> {
     try {
         const res = await fetch(`${API_URL}/auth/user/${userId}`, {
             headers: {
@@ -30,18 +30,9 @@ async function getUserApiKey(userId: string, token: string): Promise<ApiKey | nu
             return null;
         }
         const userData = await res.json();
-        // The API returns the full user object including the apiKey
-        if (userData && userData.apiKey) {
-             return {
-                id: userData._id,
-                name: "Your API Key",
-                key: userData.apiKey,
-                createdAt: userData.createdAt || new Date().toISOString()
-            };
-        }
-        return null;
+        return userData;
     } catch (error) {
-        console.error("Error fetching user api key:", error);
+        console.error("Error fetching user details:", error);
         return null;
     }
 }
@@ -155,8 +146,15 @@ export default function ApiKeysPage() {
     const fetchKey = async () => {
         if (user?.id && token) {
             setIsLoading(true);
-            const key = await getUserApiKey(user.id, token);
-            setApiKey(key);
+            const userDetails = await getUserDetails(user.id, token);
+            if (userDetails && userDetails.apiKey) {
+                setApiKey({
+                    id: userDetails.id, // Or a specific key ID if available
+                    name: "Your API Key",
+                    key: userDetails.apiKey,
+                    createdAt: userDetails.createdAt || new Date().toISOString()
+                });
+            }
             setIsLoading(false);
         }
     };
@@ -187,5 +185,3 @@ export default function ApiKeysPage() {
     </div>
   );
 }
-
-    

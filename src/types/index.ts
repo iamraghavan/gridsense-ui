@@ -1,9 +1,10 @@
 
-
 export interface User {
   id: string;
   name: string;
   email: string;
+  apiKey: string;
+  createdAt?: string;
 }
 
 export interface ChannelField {
@@ -24,6 +25,7 @@ export interface Channel {
   __v: number;
   latestData: Record<string, any> | null;
   lastUpdate: string | null;
+  totalEntries?: number;
 }
 
 export interface ApiKey {

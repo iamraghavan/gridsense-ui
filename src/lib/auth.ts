@@ -7,10 +7,8 @@ import type { User } from '@/types';
 
 // This function needs to be async to use `cookies()`
 export async function getUser(): Promise<{ user: User | null }> {
-  // Directly awaiting the `cookies()` call is not how it works. 
-  // You get the store synchronously, but its methods might be used in async contexts.
-  // The error comes from Next.js's static analysis detecting that the async `cookies()` 
-  // function is called without `await` in a Server Component.
+  // We don't need to await `cookies()` itself, but we should be in an async function
+  // to properly handle the promise-like nature of the cookie store in some contexts.
   const cookieStore = cookies();
   
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
@@ -20,6 +18,9 @@ export async function getUser(): Promise<{ user: User | null }> {
 
   const userDetailsCookie = cookieStore.get(USER_DETAILS_COOKIE_NAME)?.value;
   if (!userDetailsCookie) {
+    // If we have a token but no user details, the session is inconsistent.
+    // It's safer to treat the user as logged out.
+    // We could also try to re-fetch from an API here if we had an endpoint for it.
     return { user: null };
   }
 
