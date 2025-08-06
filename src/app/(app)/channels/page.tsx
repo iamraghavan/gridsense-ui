@@ -273,7 +273,9 @@ export default function ChannelsPage() {
   useEffect(() => {
     if (token && user?.id) {
         fetchChannels();
-    } else {
+    } else if (user?.id === null) {
+        // If we have a user object but no ID, we wait for it.
+        // If we explicitly have no user, then we can stop loading.
         setIsLoading(false);
     }
   }, [token, user]);
