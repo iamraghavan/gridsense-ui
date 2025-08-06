@@ -67,7 +67,7 @@ async function getChannels(token: string | undefined): Promise<Channel[]> {
 async function createChannel(channelData: {
     projectName: string;
     description: string;
-    fields: { name: string }[];
+    fields: { name: string; unit: string }[];
   }, token: string | undefined): Promise<any> {
   if (!token) throw new Error("Authentication token not found.");
   const res = await fetch(`${API_URL}/channels`, {
@@ -90,7 +90,7 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
-  const [fields, setFields] = useState([{ name: "" }]);
+  const [fields, setFields] = useState([{ name: "", unit: "" }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const [token, setToken] = useState<string | undefined>(undefined);
@@ -106,7 +106,7 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
 
   const handleAddField = () => {
     if (fields.length < 8) {
-      setFields([...fields, { name: "" }]);
+      setFields([...fields, { name: "", unit: "" }]);
     }
   };
 
@@ -115,8 +115,8 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
     setFields(newFields);
   };
 
-  const handleFieldNameChange = (index: number, value: string) => {
-    const newFields = fields.map((field, i) => i === index ? { name: value } : field);
+  const handleFieldChange = (index: number, key: 'name' | 'unit', value: string) => {
+    const newFields = fields.map((field, i) => i === index ? { ...field, [key]: value } : field);
     setFields(newFields);
   };
 
@@ -145,11 +145,11 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
       // Reset form
       setProjectName("");
       setDescription("");
-      setFields([{ name: "" }]);
+      setFields([{ name: "", unit: "" }]);
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Error Creating Channel",
         description: error.message || "An unexpected error occurred.",
       });
     } finally {
@@ -184,7 +184,7 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"
                 value={description}
@@ -196,9 +196,15 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
               {fields.map((field, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
-                    placeholder={`Field ${index + 1}`}
+                    placeholder={`Field ${index + 1} Name (e.g., temperature)`}
                     value={field.name}
-                    onChange={(e) => handleFieldNameChange(index, e.target.value)}
+                    onChange={(e) => handleFieldChange(index, 'name', e.target.value)}
+                  />
+                  <Input
+                    placeholder={`Unit (e.g., C)`}
+                    value={field.unit}
+                    onChange={(e) => handleFieldChange(index, 'unit', e.target.value)}
+                    className="w-24"
                   />
                   {fields.length > 1 && (
                     <Button
@@ -240,6 +246,7 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [token, setToken] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
    useEffect(() => {
         const cookieValue = document.cookie
@@ -251,13 +258,16 @@ export default function ChannelsPage() {
 
   const fetchChannels = () => {
     if (token) {
-        getChannels(token).then(setChannels);
+        setIsLoading(true);
+        getChannels(token).then(setChannels).finally(() => setIsLoading(false));
     }
   };
 
   useEffect(() => {
     if (token) {
         fetchChannels();
+    } else {
+        setIsLoading(false);
     }
   }, [token]);
 
@@ -288,37 +298,44 @@ export default function ChannelsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {channels.map((channel) => (
-              <TableRow key={channel.channel_id}>
-                <TableCell className="font-medium">{channel.projectName}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground truncate max-w-xs">{channel.description}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                        {channel.fields.map((field, index) => field.name ? <Badge key={field._id || index} variant="outline">{field.name}</Badge> : null)}
-                    </div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {new Date(channel.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>View Data</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-             {channels.length === 0 && (
+            {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                        Loading channels...
+                    </TableCell>
+                </TableRow>
+            ) : channels.length > 0 ? (
+                channels.map((channel) => (
+                  <TableRow key={channel.channel_id}>
+                    <TableCell className="font-medium">{channel.projectName}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground truncate max-w-xs">{channel.description}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                        <div className="flex flex-wrap gap-1">
+                            {channel.fields.map((field, index) => field.name ? <Badge key={field._id || index} variant="outline">{`${field.name} (${field.unit || 'N/A'})`}</Badge> : null)}
+                        </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {new Date(channel.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem>View Data</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+            ) : (
                 <TableRow>
                     <TableCell colSpan={5} className="text-center h-24">
                         No channels found. Create your first one to get started.

@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, MoreHorizontal, Rss, HelpCircle } from "lucide-react";
+import { ArrowRight, MoreHorizontal, Rss, HelpCircle, Activity } from "lucide-react";
 import type { Channel } from "@/types";
 import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from "@/lib/constants";
 import {
@@ -32,35 +32,53 @@ import {
 import { useEffect, useState } from "react";
 
 async function getChannels(token: string | undefined): Promise<Channel[]> {
-  if (!token) {
-    return [];
-  }
-
+  if (!token) return [];
   try {
-    const response = await fetch(`${API_URL}/channels`, {
+    const res = await fetch(`${API_URL}/channels`, {
       headers: {
         "x-api-key": API_KEY,
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
-      cache: 'no-store',
+      cache: "no-store",
     });
-
-    if (!response.ok) {
-      console.error("Failed to fetch channels:", response.statusText);
-      return [];
+    if (!res.ok) {
+        console.error("Failed to fetch channels:", res.statusText);
+        return [];
     }
-
-    const channels = await response.json();
-    return channels;
+    return res.json();
   } catch (error) {
-    console.error("Error fetching channels:", error);
+    console.error("Failed to fetch channels", error);
     return [];
   }
 }
 
+async function getChannelHistory(channelId: string, token: string | undefined): Promise<any[]> {
+    if (!token) return [];
+    try {
+        const res = await fetch(`${API_URL}/sensors/${channelId}/history`, {
+             headers: {
+                "x-api-key": API_KEY,
+                Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+        });
+        if (!res.ok) {
+            console.error(`Failed to fetch history for channel ${channelId}:`, res.statusText);
+            return [];
+        }
+        return res.json();
+    } catch (error) {
+        console.error(`Error fetching history for channel ${channelId}:`, error);
+        return [];
+    }
+}
+
+
 export default function DashboardPage() {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [token, setToken] = useState<string | undefined>(undefined);
+    const [totalRequests, setTotalRequests] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const cookieValue = document.cookie
@@ -72,11 +90,20 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (token) {
-            getChannels(token).then(setChannels);
+            setIsLoading(true);
+            getChannels(token).then(async (fetchedChannels) => {
+                setChannels(fetchedChannels);
+
+                let total = 0;
+                for (const channel of fetchedChannels) {
+                    const history = await getChannelHistory(channel.channel_id, token);
+                    total += history.length;
+                }
+                setTotalRequests(total);
+                setIsLoading(false);
+            });
         }
     }, [token]);
-
-    const totalRequests = 0;
 
   return (
     <div className="space-y-6">
@@ -101,17 +128,17 @@ export default function DashboardPage() {
                     <Rss className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{channels.length}</div>
+                    <div className="text-2xl font-bold">{isLoading ? '...' : channels.length}</div>
                     <p className="text-xs text-muted-foreground">You have {channels.length} channels in total.</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{totalRequests}</div>
+                    <div className="text-2xl font-bold">{isLoading ? '...' : totalRequests}</div>
                     <p className="text-xs text-muted-foreground">Total data points from all channels.</p>
                 </CardContent>
             </Card>
@@ -138,7 +165,13 @@ export default function DashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {channels.length > 0 ? (
+              {isLoading ? (
+                 <TableRow>
+                  <TableCell colSpan={5} className="text-center h-24">
+                    Loading your channels...
+                  </TableCell>
+                </TableRow>
+              ) : channels.length > 0 ? (
                 channels.map((channel) => (
                   <TableRow key={channel.channel_id}>
                     <TableCell className="font-medium">{channel.projectName}</TableCell>

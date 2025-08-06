@@ -6,13 +6,19 @@ export interface User {
   email: string;
 }
 
+export interface ChannelField {
+    name: string;
+    unit?: string;
+    _id: string;
+}
+
 export interface Channel {
   _id: string;
   channel_id: string;
   userId: string;
   projectName: string;
   description: string;
-  fields: { name: string; _id: string }[];
+  fields: ChannelField[];
   createdAt: string;
   updatedAt: string;
   __v: number;
