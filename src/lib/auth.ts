@@ -10,7 +10,7 @@ export async function getUser(): Promise<{ user: User | null }> {
   }
 
   try {
-    const res = await fetch(`${API_URL}/auth/user`, {
+    const res = await fetch(`${API_URL}/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'x-api-key': API_KEY,
