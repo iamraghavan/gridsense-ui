@@ -19,9 +19,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, MoreHorizontal, Rss, HelpCircle, Activity } from "lucide-react";
-import type { Channel } from "@/types";
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from "@/lib/constants";
+import { ArrowRight, MoreHorizontal, Rss, Activity } from "lucide-react";
+import type { Channel, User } from "@/types";
+import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,10 +31,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 
-async function getChannels(token: string | undefined): Promise<Channel[]> {
-  if (!token) return [];
+async function getChannels(userId: string, token: string | undefined): Promise<Channel[]> {
+  if (!token || !userId) return [];
   try {
-    const res = await fetch(`${API_URL}/channels`, {
+    const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
         "x-api-key": API_KEY,
         Authorization: `Bearer ${token}`,
@@ -45,7 +45,8 @@ async function getChannels(token: string | undefined): Promise<Channel[]> {
         console.error("Failed to fetch channels:", res.statusText);
         return [];
     }
-    return res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Failed to fetch channels", error);
     return [];
@@ -77,6 +78,7 @@ async function getChannelHistory(channelId: string, token: string | undefined): 
 export default function DashboardPage() {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [token, setToken] = useState<string | undefined>(undefined);
+    const [user, setUser] = useState<User | null>(null);
     const [totalRequests, setTotalRequests] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -86,12 +88,20 @@ export default function DashboardPage() {
             .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
             ?.split('=')[1];
         setToken(cookieValue);
+
+        const userCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
+            ?.split('=')[1];
+        if (userCookie) {
+            setUser(JSON.parse(decodeURIComponent(userCookie)));
+        }
     }, []);
 
     useEffect(() => {
-        if (token) {
+        if (token && user?.id) {
             setIsLoading(true);
-            getChannels(token).then(async (fetchedChannels) => {
+            getChannels(user.id, token).then(async (fetchedChannels) => {
                 setChannels(fetchedChannels);
 
                 let total = 0;
@@ -102,8 +112,12 @@ export default function DashboardPage() {
                 setTotalRequests(total);
                 setIsLoading(false);
             });
+        } else {
+             if(!token) {
+              setIsLoading(false);
+            }
         }
-    }, [token]);
+    }, [token, user]);
 
   return (
     <div className="space-y-6">

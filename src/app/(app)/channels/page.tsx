@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, X } from "lucide-react";
-import type { Channel } from "@/types";
+import type { Channel, User } from "@/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,13 +40,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from "@/lib/constants";
+import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 
-async function getChannels(token: string | undefined): Promise<Channel[]> {
-  if (!token) return [];
+async function getChannels(userId: string, token: string | undefined): Promise<Channel[]> {
+  if (!token || !userId) return [];
   try {
-    const res = await fetch(`${API_URL}/channels`, {
+    const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
         "x-api-key": API_KEY,
         Authorization: `Bearer ${token}`,
@@ -57,7 +57,8 @@ async function getChannels(token: string | undefined): Promise<Channel[]> {
         console.error("Failed to fetch channels:", res.statusText);
         return [];
     }
-    return res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Failed to fetch channels", error);
     return [];
@@ -246,6 +247,7 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [token, setToken] = useState<string | undefined>(undefined);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
    useEffect(() => {
@@ -254,22 +256,32 @@ export default function ChannelsPage() {
             .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
             ?.split('=')[1];
         setToken(cookieValue);
+
+        const userCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
+            ?.split('=')[1];
+        if (userCookie) {
+            setUser(JSON.parse(decodeURIComponent(userCookie)));
+        }
     }, []);
 
   const fetchChannels = () => {
-    if (token) {
+    if (token && user?.id) {
         setIsLoading(true);
-        getChannels(token).then(setChannels).finally(() => setIsLoading(false));
+        getChannels(user.id, token).then(setChannels).finally(() => setIsLoading(false));
     }
   };
 
   useEffect(() => {
-    if (token) {
+    if (token && user?.id) {
         fetchChannels();
     } else {
-        setIsLoading(false);
+        if(!token){
+            setIsLoading(false);
+        }
     }
-  }, [token]);
+  }, [token, user]);
 
   return (
     <Card>
