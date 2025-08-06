@@ -4,7 +4,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from './constants';
+import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from './constants';
+import type { User } from '@/types';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -56,13 +57,19 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     }
     
     if (data.token) {
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
+      const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'lax' as 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 1 week
-      });
+      };
+      
+      const user: User = { id: data._id, name: data.name, email: data.email };
+      
+      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
+      cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
+
     } else {
        return { message: 'Login failed: No token received.' };
     }
@@ -103,13 +110,19 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     }
     
     if (data.token) {
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
+      const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'lax' as 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 1 week
-      });
+      };
+
+      const user: User = { id: data.user._id, name: data.user.name, email: data.user.email };
+
+      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
+      cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
+
     } else {
         return { message: 'Registration failed: No token received.' };
     }
@@ -123,5 +136,6 @@ export async function register(prevState: AuthState, formData: FormData): Promis
 
 export async function logout() {
   cookies().delete(AUTH_TOKEN_COOKIE_NAME);
+  cookies().delete(USER_DETAILS_COOKIE_NAME);
   redirect('/login');
 }

@@ -1,6 +1,6 @@
 
 import { cookies } from 'next/headers';
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from './constants';
+import { AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from './constants';
 import type { User } from '@/types';
 
 export async function getUser(): Promise<{ user: User | null }> {
@@ -9,24 +9,16 @@ export async function getUser(): Promise<{ user: User | null }> {
     return { user: null };
   }
 
+  const userDetailsCookie = cookies().get(USER_DETAILS_COOKIE_NAME)?.value;
+  if (!userDetailsCookie) {
+    return { user: null };
+  }
+
   try {
-    const res = await fetch(`${API_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'x-api-key': API_KEY,
-      },
-      next: { tags: ['user'] },
-    });
-
-    if (!res.ok) {
-      console.error('Failed to fetch user:', res.statusText);
-      return { user: null };
-    }
-
-    const data = await res.json();
-    return { user: data.user };
+    const user: User = JSON.parse(userDetailsCookie);
+    return { user };
   } catch (error) {
-    console.error('An error occurred while fetching the user:', error);
+    console.error('Failed to parse user details from cookie:', error);
     return { user: null };
   }
 }
