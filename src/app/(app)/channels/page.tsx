@@ -53,7 +53,10 @@ async function getChannels(token: string | undefined): Promise<Channel[]> {
       },
       cache: "no-store",
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+        console.error("Failed to fetch channels:", res.statusText);
+        return [];
+    }
     return res.json();
   } catch (error) {
     console.error("Failed to fetch channels", error);
@@ -90,7 +93,16 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
   const [fields, setFields] = useState([{ name: "" }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const token = document.cookie.split('; ').find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))?.split('=')[1];
+  const [token, setToken] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
+            ?.split('=')[1];
+        setToken(cookieValue);
+    }, []);
+
 
   const handleAddField = () => {
     if (fields.length < 8) {
@@ -119,6 +131,7 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
           title: "Validation Error",
           description: "Project Name and at least one Field are required.",
         });
+        setIsSubmitting(false);
         return;
       }
 
@@ -224,18 +237,27 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
   );
 }
 
-
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
-  const token = document.cookie.split('; ').find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))?.split('=')[1];
+  const [token, setToken] = useState<string | undefined>(undefined);
+
+   useEffect(() => {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
+            ?.split('=')[1];
+        setToken(cookieValue);
+    }, []);
 
   const fetchChannels = () => {
-    getChannels(token).then(setChannels);
+    if (token) {
+        getChannels(token).then(setChannels);
+    }
   };
 
   useEffect(() => {
     fetchChannels();
-  }, []);
+  }, [token]);
 
   return (
     <Card>

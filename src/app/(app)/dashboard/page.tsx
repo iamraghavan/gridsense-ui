@@ -58,13 +58,11 @@ async function getChannels(token: string | undefined): Promise<Channel[]> {
   }
 }
 
-
 export default function DashboardPage() {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [token, setToken] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-        // Since we are in a client component, we access cookies via document.cookie
         const cookieValue = document.cookie
             .split('; ')
             .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
@@ -78,7 +76,7 @@ export default function DashboardPage() {
         }
     }, [token]);
 
-    const totalRequests = 0; // Placeholder until API provides this data
+    const totalRequests = 0;
 
   return (
     <div className="space-y-6">
