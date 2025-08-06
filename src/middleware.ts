@@ -12,14 +12,8 @@ export function middleware(request: NextRequest) {
 
   if (token) {
     // If user is authenticated and tries to access login, register, or the marketing home page, redirect to dashboard
-    if (guestRoutes.includes(pathname)) {
-       // Allow access to root only if it's the exact path, to avoid matching /dashboard etc.
-       if (pathname === '/' && request.nextUrl.pathname === '/') {
-            return NextResponse.redirect(new URL('/dashboard', request.url));
-       }
-       if(pathname.startsWith('/login') || pathname.startsWith('/register')) {
-            return NextResponse.redirect(new URL('/dashboard', request.url));
-       }
+    if (pathname.startsWith('/login') || pathname.startsWith('/register') || pathname === '/') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   } else {
     // If user is not authenticated and tries to access a protected route, redirect to login

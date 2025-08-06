@@ -118,7 +118,9 @@ export async function register(prevState: AuthState, formData: FormData): Promis
         maxAge: 60 * 60 * 24 * 7, // 1 week
       };
 
-      const user: User = { id: data.user._id, name: data.user.name, email: data.user.email };
+      // Handle the case where the user object might be nested
+      const userData = data.user.user ? data.user.user : data.user;
+      const user: User = { id: userData._id, name: userData.name, email: userData.email };
 
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
