@@ -7,10 +7,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import type { Channel } from '@/types';
+import type { Channel, ChannelHistory } from '@/types';
 
-export function ChannelDetailClient({ channel }: { channel: Channel }) {
-  // Group entries by field name
+function processChannelData(channel: Channel) {
   const dataByField = channel.fields.reduce((acc, field) => {
     acc[field.name] = {
       unit: field.unit,
@@ -19,11 +18,13 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
     return acc;
   }, {} as Record<string, { unit: string; data: any[] }>);
 
-  if (channel.entries && channel.entries.length > 0) {
-    channel.entries.forEach(entry => {
+  if (channel.history && channel.history.length > 0) {
+    channel.history.forEach((entry: ChannelHistory) => {
       Object.entries(entry.data).forEach(([fieldName, value]) => {
-        if (dataByField[fieldName]) {
-          dataByField[fieldName].data.push({
+        // Find the field object that matches the fieldName from the entry data
+        const fieldConfig = channel.fields.find(f => f.name === fieldName);
+        if (fieldConfig && dataByField[fieldConfig.name]) {
+          dataByField[fieldConfig.name].data.push({
             time: format(parseISO(entry.createdAt), 'MMM d, HH:mm'),
             value: value,
           });
@@ -31,6 +32,18 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
       });
     });
   }
+
+  // Reverse the data arrays so the chart shows oldest to newest
+  Object.values(dataByField).forEach(field => {
+    field.data.reverse();
+  });
+  
+  return dataByField;
+}
+
+
+export function ChannelDetailClient({ channel }: { channel: Channel }) {
+  const chartableData = processChannelData(channel);
 
   return (
     <div className="flex-1 space-y-4 pt-6">
@@ -51,8 +64,7 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
       
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         {channel.fields.map((field) => {
-          const chartData = dataByField[field.name]?.data ?? [];
-          const unit = dataByField[field.name]?.unit;
+          const { data: chartData, unit } = chartableData[field.name] ?? { data: [], unit: '' };
 
           return (
             <Card key={field._id}>

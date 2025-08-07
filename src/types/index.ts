@@ -11,13 +11,11 @@ export interface LoginResponse extends User {
     message?: string;
 }
 
-export interface ChannelEntry {
+export interface ChannelHistory {
     _id: string;
     channelId: string;
     data: Record<string, number>;
     createdAt: string;
-    updatedAt: string;
-    __v: number;
 }
 
 export interface Channel {
@@ -37,7 +35,7 @@ export interface Channel {
     latestData?: Record<string, number>;
     lastUpdate?: string;
     totalEntries?: number;
-    entries?: ChannelEntry[];
+    history?: ChannelHistory[];
 }
 
 export interface ChannelStats {
