@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   KeyRound,
@@ -23,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/logo';
-import { logout } from '@/lib/actions';
 import type { User } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -39,9 +38,17 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 
+const USER_CACHE_KEY = 'rsg_user';
+const TOKEN_CACHE_KEY = 'rsg_token';
+
 function UserMenu({ user }: { user: User }) {
-    const handleLogout = async () => {
-        await logout();
+    const router = useRouter();
+    const handleLogout = () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(USER_CACHE_KEY);
+            localStorage.removeItem(TOKEN_CACHE_KEY);
+        }
+        router.push('/login');
     }
     return (
         <DropdownMenu>
@@ -112,38 +119,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
+  const router = useRouter();
 
   React.useEffect(() => {
-    async function initializeSession() {
-      console.log("AppLayout: Initializing session...");
-      setIsLoading(true);
+    function initializeSession() {
+      console.log("AppLayout: Initializing session from localStorage...");
       try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-            const data = await res.json();
-            if (data.user && data.token) {
-                console.log("AppLayout: User data fetched successfully on client-side:", data);
-                setUser(data.user);
-                setToken(data.token);
-            } else {
-                 console.error("AppLayout: Auth response missing user or token", data);
-                 await logout();
-            }
+        const cachedUser = localStorage.getItem(USER_CACHE_KEY);
+        const cachedToken = localStorage.getItem(TOKEN_CACHE_KEY);
+
+        if (cachedUser && cachedToken) {
+          const parsedUser: User = JSON.parse(cachedUser);
+          // Ensure the user object has the 'id' field for consistency
+          if(!parsedUser.id) {
+            parsedUser.id = parsedUser._id;
+          }
+          setUser(parsedUser);
+          setToken(cachedToken);
+          console.log("AppLayout: Session restored from cache for user:", parsedUser.name);
         } else {
-            console.error("AppLayout: Failed to fetch user from /api/auth/me, logging out.", res.status);
-            await logout();
+          console.log("AppLayout: No session found in cache. Redirecting to login.");
+          router.push('/login');
         }
       } catch (e) {
-        console.error("AppLayout: Exception during user fetch, logging out.", e);
-        await logout();
+        console.error("AppLayout: Failed to parse cached session, redirecting to login.", e);
+        router.push('/login');
       } finally {
         setIsLoading(false);
-        console.log("AppLayout: Finished session initialization.");
       }
     }
 
     initializeSession();
-  }, []);
+  }, [router]);
   
   const navItems = React.useMemo(() => {
     if (!user?.id) return [];
@@ -158,7 +165,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <LoadingSkeleton />;
   }
 
-  // This is the critical change: we clone the child element and pass the new props.
+  // Clone the child element and pass the new props.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // @ts-ignore - We are knowingly adding props to the child component

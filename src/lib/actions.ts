@@ -6,11 +6,6 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from './constants';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address.'),
-  password: z.string().min(1, 'Password is required.'),
-});
-
 const registerSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
   email: z.string().email('Invalid email address.'),
@@ -27,66 +22,9 @@ export type AuthState = {
   };
 };
 
-export async function login(prevState: AuthState, formData: FormData): Promise<AuthState> {
-  const validatedFields = loginSchema.safeParse(Object.fromEntries(formData.entries()));
-
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Invalid fields. Failed to Login.',
-    };
-  }
-  
-  const { email, password } = validatedFields.data;
-  let userId;
-
-  try {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-    console.log("Login API Response:", data); 
-
-    if (!response.ok) {
-      return { message: data.message || 'Login failed. Please check your credentials.' };
-    }
-    
-    // Your API returns a flat object with _id and token on success
-    if (data.token && data._id) {
-      const token = data.token;
-      userId = data._id;
-      
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-      });
-    } else {
-       return { message: 'Login failed: No token or user ID received from API.' };
-    }
-
-  } catch (error: any) {
-     if (error.message.includes('NEXT_REDIRECT')) {
-        throw error;
-     }
-    console.error('Login error:', error);
-    return { message: 'An unexpected error occurred.' };
-  }
-  
-  if (userId) {
-    redirect(`/dashboard/${userId}`);
-  } else {
-    return { message: 'Login succeeded but could not get user ID for redirect.' };
-  }
-}
+// Note: The login logic has been moved to the client-side in LoginPage
+// to handle localStorage. This file is now primarily for registration
+// and the server-side logout utility.
 
 export async function register(prevState: AuthState, formData: FormData): Promise<AuthState> {
   const validatedFields = registerSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -99,14 +37,13 @@ export async function register(prevState: AuthState, formData: FormData): Promis
   }
 
   const { name, email, password } = validatedFields.data;
-  let userId;
   
   try {
     const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
+        'X-Api-Key': API_KEY,
       },
       body: JSON.stringify({ name, email, password }),
     });
@@ -115,24 +52,12 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     console.log("Register API Response:", data);
 
     if (!response.ok) {
-      return { message: data.message || 'Registration failed.' };
+       return { message: data.message || 'Registration failed.' };
     }
     
-    if (data.token && data._id) {
-       const token = data.token;
-       userId = data._id;
-
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-      });
-    } else {
-        return { message: 'Registration failed: No token or user data received.' };
-    }
-
+    // Although we are redirecting, we can't pass the data directly to the client page
+    // after the redirect. The LoginPage will handle the login-after-register flow.
+    
   } catch (error: any) {
     if (error.message.includes('NEXT_REDIRECT')) {
       throw error;
@@ -141,14 +66,15 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     return { message: 'An unexpected error occurred during registration.' };
   }
   
-  if (userId) {
-    redirect(`/dashboard/${userId}`);
-  } else {
-    return { message: 'Registration succeeded but could not get user ID for redirect.'};
-  }
+  // After successful registration, redirect to login page where user can sign in.
+  redirect('/login');
 }
 
+// The logout function is no longer needed here as it's handled client-side.
+// Kept for potential future server-side session needs.
 export async function logout() {
-  cookies().delete(AUTH_TOKEN_COOKIE_NAME);
+  // This function would be used if we were managing sessions with server-side cookies.
+  // Since we've moved to localStorage, the primary logout logic is in AppLayout.
+  console.log("Server-side logout called, redirecting to /login.");
   redirect('/login');
 }

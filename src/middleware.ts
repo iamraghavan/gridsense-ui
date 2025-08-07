@@ -1,36 +1,24 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { AUTH_TOKEN_COOKIE_NAME } from '@/lib/constants';
 
 const PUBLIC_ROUTES = ['/login', '/register', '/'];
 const PROTECTED_ROUTE_PREFIX = '/dashboard';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get(AUTH_TOKEN_COOKIE_NAME)?.value;
-
-  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
-  const isProtectedRoute = pathname.startsWith(PROTECTED_ROUTE_PREFIX);
-
-  if (token) {
-    if (isPublicRoute) {
-      // If user is authenticated and tries to access a public route like /login,
-      // redirect them to a generic dashboard path. The AppLayout will handle resolving the user ID.
-      return NextResponse.redirect(new URL(PROTECTED_ROUTE_PREFIX, request.url));
-    }
-  } else {
-    // If user is not authenticated and tries to access a protected route,
-    // redirect them to the login page.
-    if (isProtectedRoute) {
-        let from = pathname;
-        if (request.nextUrl.search) {
-            from += request.nextUrl.search;
-        }
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('from', from);
-        return NextResponse.redirect(loginUrl);
-    }
+  
+  // Since we are using localStorage, the server-side middleware no longer has access
+  // to the token directly via cookies in a reliable way for protecting routes.
+  // Route protection will be handled client-side in the `AppLayout`.
+  // If a user tries to access a protected route without a session, the layout
+  // will redirect them to the login page.
+  
+  // This middleware can still be useful for other purposes, like redirecting
+  // the root path to the dashboard or login page.
+  
+  if (pathname === '/') {
+      return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
@@ -40,7 +28,7 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (This is for our BFF routes like /api/auth/me)
+     * - api (This is for our BFF routes, though we've removed it for now)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)

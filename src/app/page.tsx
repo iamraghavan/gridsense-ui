@@ -1,11 +1,23 @@
 
+'use client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, BarChart, Rss, KeyRound } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to login page from the root.
+    router.replace('/login');
+  }, [router]);
+  
+  // Optional: Render a loading state or the homepage content briefly
+  // before the redirect happens. A loading spinner is a good choice.
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
