@@ -35,7 +35,7 @@ interface DashboardClientProps {
 export function DashboardClient({ user, initialStats, initialChannels }: DashboardClientProps) {
   const [stats] = useState<ChannelStats | null>(initialStats);
   const [channels] = useState<Channel[]>(initialChannels);
-  const [isLoading, setIsLoading] = useState(false); // Can be used for subsequent client-side updates
+  const [isLoading, setIsLoading] = useState(!initialStats && !initialChannels); 
   const { toast } = useToast();
 
   if (!initialStats || initialChannels.length === 0) {
@@ -99,7 +99,7 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                                     <TableCell className="font-medium">{channel.projectName}</TableCell>
                                     <TableCell className="hidden md:table-cell text-muted-foreground">{channel.description}</TableCell>
                                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                                        {channel.lastUpdate ? format(new Date(channel.lastUpdate), 'PP pp') : 'N/A'}
+                                        {channel.lastUpdate ? format(new Date(channel.lastUpdate), 'PPpp') : 'N/A'}
                                     </TableCell>
                                     <TableCell>
                                         {channel.latestData ? `${Object.values(channel.latestData)[0]}` : 'N/A'}
