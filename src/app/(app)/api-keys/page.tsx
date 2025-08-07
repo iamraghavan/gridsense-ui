@@ -1,4 +1,5 @@
 
+
 'use client'
 import { Button } from "@/components/ui/button";
 import {
@@ -10,11 +11,15 @@ import {
 } from "@/components/ui/card";
 import { Copy, Eye, EyeOff, PlusCircle, Trash2 } from "lucide-react";
 import type { User } from "@/types";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface ApiKeysPageProps {
+  user: User; // Injected by AppLayout
+  token: string; // Injected by AppLayout
+}
 
 function ApiKeyCard({ apiKey, isLoading }: { apiKey: string | null, isLoading: boolean }) {
     const [isVisible, setIsVisible] = useState(false);
@@ -90,27 +95,10 @@ function ApiKeyCard({ apiKey, isLoading }: { apiKey: string | null, isLoading: b
     )
 }
 
-export default function ApiKeysPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const userCookie = document.cookie
-        .split('; ')
-        .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
-        ?.split('=')[1];
-
-    if (userCookie) {
-        try {
-            const parsedUser = JSON.parse(decodeURIComponent(userCookie));
-            setUser(parsedUser);
-        } catch (e) {
-            console.error("Failed to parse user cookie:", e);
-            setUser(null);
-        }
-    }
-    setIsLoading(false);
-  }, []);
+export default function ApiKeysPage({ user, token }: ApiKeysPageProps) {
+  // The user object is now passed as a prop from the layout.
+  // We can determine loading state by checking if the user prop exists.
+  const isLoading = !user;
 
   return (
     <div className="space-y-6">

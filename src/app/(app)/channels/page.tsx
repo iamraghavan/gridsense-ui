@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState, useCallback } from "react";
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
+import { API_URL, API_KEY } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -54,7 +54,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+
+interface ChannelsPageProps {
+  user: User; // Injected by AppLayout
+  token: string; // Injected by AppLayout
+}
 
 async function getChannels(userId: string, token: string): Promise<Channel[]> {
   try {
@@ -311,10 +316,8 @@ function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Ch
     );
 }
 
-export default function ChannelsPage() {
+export default function ChannelsPage({ user, token }: ChannelsPageProps) {
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [token, setToken] = useState<string | undefined>(undefined);
-  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
    const fetchChannels = useCallback(() => {
@@ -324,29 +327,6 @@ export default function ChannelsPage() {
     }
    }, [user?.id, token]);
   
-  useEffect(() => {
-        const cookieValue = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
-            ?.split('=')[1];
-        setToken(cookieValue);
-
-        const userCookie = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
-            ?.split('=')[1];
-
-        if (userCookie) {
-            try {
-                setUser(JSON.parse(decodeURIComponent(userCookie)));
-            } catch (e) {
-                console.error("Failed to parse user cookie:", e);
-                setUser(null);
-            }
-        }
-        // If cookies are absent, loading will stay true until redirect happens
-    }, []);
-
   useEffect(() => {
     if (user && token) {
         fetchChannels();

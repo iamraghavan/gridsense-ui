@@ -80,28 +80,35 @@ function UserMenu({ user }: { user: User }) {
     );
 }
 
+// Helper function to get a cookie by name
+const getCookie = (name: string): string | undefined => {
+    if (typeof document === 'undefined') return undefined;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift();
+};
+
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
+  const [token, setToken] = React.useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
 
   React.useEffect(() => {
-    const userCookie = document.cookie
-        .split('; ')
-        .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
-        ?.split('=')[1];
-    
-    const tokenCookie = document.cookie
-        .split('; ')
-        .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
-        ?.split('=')[1];
+    const userCookie = getCookie(USER_DETAILS_COOKIE_NAME);
+    const tokenCookie = getCookie(AUTH_TOKEN_COOKIE_NAME);
 
     if (userCookie && tokenCookie) {
         try {
-            setUser(JSON.parse(decodeURIComponent(userCookie)));
+            const parsedUser = JSON.parse(decodeURIComponent(userCookie));
+            setUser(parsedUser);
+            setToken(tokenCookie);
         } catch (e) {
             console.error("Failed to parse user cookie:", e);
             setUser(null);
+            setToken(undefined);
+            logout(); // Force logout if cookie is malformed
         }
     } else {
         // If cookies are not found, redirect to login
@@ -110,11 +117,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const navItems = React.useMemo(() => [
-    { href: `/dashboard/${user?.id}`, icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/channels', icon: Rss, label: 'Channels' },
-    { href: '/api-keys', icon: KeyRound, label: 'API Keys' },
-  ], [user?.id]);
+  const navItems = React.useMemo(() => {
+    if (!user?.id) return [];
+    return [
+      { href: `/dashboard/${user.id}`, icon: LayoutDashboard, label: 'Dashboard' },
+      { href: '/channels', icon: Rss, label: 'Channels' },
+      { href: '/api-keys', icon: KeyRound, label: 'API Keys' },
+    ];
+  }, [user?.id]);
 
   if (isLoading) {
     return (
@@ -141,7 +151,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
+  if (!user || !token) {
     // This case should be handled by the redirect in useEffect, but as a fallback
     redirect('/login');
     return null;
@@ -200,7 +210,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <UserMenu user={user} />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
-          {children}
+          {React.Children.map(children, child => {
+              if (React.isValidElement(child)) {
+                // @ts-ignore
+                return React.cloneElement(child, { user, token });
+              }
+              return child;
+          })}
         </main>
       </div>
     </div>

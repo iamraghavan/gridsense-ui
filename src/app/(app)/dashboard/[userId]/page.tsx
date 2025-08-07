@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, MoreHorizontal, Rss, Activity, BarChart } from "lucide-react";
 import type { Channel, User } from "@/types";
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
+import { API_URL, API_KEY } from "@/lib/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface DashboardPageProps {
+  params: { userId: string };
+  user: User; // Injected by AppLayout
+  token: string; // Injected by AppLayout
+}
 
 async function getChannels(userId: string, token: string): Promise<{ count: number, channels: Channel[] }> {
   try {
@@ -81,16 +87,15 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
     );
 }
 
-export default function DashboardPage({ params }: { params: { userId: string } }) {
+export default function DashboardPage({ params, user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
-    const [token, setToken] = useState<string | undefined>(undefined);
     const [totalRequests, setTotalRequests] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchDashboardData = useCallback(async (authToken: string) => {
+    const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
         setIsLoading(true);
         try {
-            const { channels: fetchedChannels } = await getChannels(params.userId, authToken);
+            const { channels: fetchedChannels } = await getChannels(userId, authToken);
             setChannels(fetchedChannels);
 
             const total = fetchedChannels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
@@ -101,21 +106,15 @@ export default function DashboardPage({ params }: { params: { userId: string } }
         } finally {
             setIsLoading(false);
         }
-    }, [params.userId]);
+    }, []);
 
     useEffect(() => {
-        const cookieValue = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
-            ?.split('=')[1];
-        setToken(cookieValue);
-
-        if (cookieValue) {
-            fetchDashboardData(cookieValue);
+        if (user?.id && token) {
+            fetchDashboardData(user.id, token);
         } else {
-            setIsLoading(false);
+             setIsLoading(false);
         }
-    }, [fetchDashboardData]);
+    }, [user, token, fetchDashboardData]);
 
     const recentChannels = channels.slice(0, 5);
 
