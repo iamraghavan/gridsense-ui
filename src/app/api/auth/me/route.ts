@@ -1,3 +1,4 @@
+
 // /src/app/api/auth/me/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { AUTH_TOKEN_COOKIE_NAME, API_URL, API_KEY } from '@/lib/constants';
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     const res = await fetch(`${API_URL}/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'x-api-key': API_KEY,
+        'x-api-key': API_KEY, // Correct casing for the API key header
       },
       // Ensure we always get the latest user data, not a cached version.
       cache: 'no-store', 
