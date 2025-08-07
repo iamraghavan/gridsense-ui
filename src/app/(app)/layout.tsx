@@ -41,15 +41,7 @@ import {
 const USER_CACHE_KEY = 'rsg_user';
 const TOKEN_CACHE_KEY = 'rsg_token';
 
-function UserMenu({ user }: { user: User }) {
-    const router = useRouter();
-    const handleLogout = () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem(USER_CACHE_KEY);
-            localStorage.removeItem(TOKEN_CACHE_KEY);
-        }
-        router.push('/login');
-    }
+function UserMenu({ user, onLogout }: { user: User, onLogout: () => void }) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -70,7 +62,7 @@ function UserMenu({ user }: { user: User }) {
                 Support
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+               <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>
                </DropdownMenuItem>
@@ -121,6 +113,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const handleLogout = React.useCallback(() => {
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem(USER_CACHE_KEY);
+        localStorage.removeItem(TOKEN_CACHE_KEY);
+    }
+    setUser(null);
+    setToken(null);
+    router.push('/login');
+  }, [router]);
+
   React.useEffect(() => {
     function initializeSession() {
       console.log("AppLayout: Initializing session from localStorage...");
@@ -130,7 +132,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         if (cachedUser && cachedToken) {
           const parsedUser: User = JSON.parse(cachedUser);
-          // Ensure the user object has the 'id' field for consistency
           if(!parsedUser.id) {
             parsedUser.id = parsedUser._id;
           }
@@ -139,18 +140,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           console.log("AppLayout: Session restored from cache for user:", parsedUser.name);
         } else {
           console.log("AppLayout: No session found in cache. Redirecting to login.");
-          router.push('/login');
+          handleLogout();
         }
       } catch (e) {
-        console.error("AppLayout: Failed to parse cached session, redirecting to login.", e);
-        router.push('/login');
+        console.error("AppLayout: Failed to parse cached session, logging out.", e);
+        handleLogout();
       } finally {
         setIsLoading(false);
       }
     }
 
     initializeSession();
-  }, [router]);
+  }, [handleLogout]);
   
   const navItems = React.useMemo(() => {
     if (!user?.id) return [];
@@ -165,10 +166,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <LoadingSkeleton />;
   }
 
-  // Clone the child element and pass the new props.
+  // Pass user and token to all children
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      // @ts-ignore - We are knowingly adding props to the child component
+      // @ts-ignore
       return React.cloneElement(child, { user, token });
     }
     return child;
@@ -176,15 +177,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   const getPageTitle = () => {
     const currentPath = pathname.split('?')[0];
-    const activeItem = navItems.find(item => currentPath.startsWith(item.href) && item.href !== `/dashboard/${user.id}`);
-    
-    if (pathname.includes('/channel/')) {
-        const pathSegments = pathname.split('/');
-        if (pathSegments.length > 4 && pathSegments[4] !== '') {
-             return "Channel Details";
-        }
-       return "Channels";
+    if (currentPath.includes('/channel/')) {
+        return "Channel Details";
     }
+    const activeItem = navItems.find(item => {
+        return item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
+    });
     return activeItem?.label || 'Dashboard';
   }
 
@@ -214,7 +212,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenu>
             </SidebarContent>
              <SidebarFooter>
-                <UserMenu user={user} />
+                <UserMenu user={user} onLogout={handleLogout} />
             </SidebarFooter>
         </Sidebar>
         <SidebarInset>

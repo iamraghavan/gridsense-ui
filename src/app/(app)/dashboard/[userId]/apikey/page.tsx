@@ -94,7 +94,7 @@ function ApiKeyCard({ apiKey, isLoading }: { apiKey: string | null, isLoading: b
     )
 }
 
-export default function ApiKeysPage({ user }: ApiKeysPageProps) {
+export default function ApiKeysPage({ user, token }: ApiKeysPageProps) {
   const isLoading = !user;
 
   return (

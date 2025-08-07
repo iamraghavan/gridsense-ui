@@ -76,6 +76,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const fetchDashboardData = useCallback(async () => {
         if (!user?.id || !token) {
             console.log(`DashboardPage: Cannot fetch data, user or token is missing. {userId: ${user?.id}, tokenExists: ${!!token}}`);
+            setIsDataLoading(false);
             return;
         }
         
