@@ -35,6 +35,7 @@ import { getDashboardOverview } from "@/services/statsService";
 
 interface DashboardPageProps {
   user: User; // Injected by AppLayout
+  token: string; // Injected by AppLayout
 }
 
 type Stats = {
@@ -67,14 +68,14 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
     );
 }
 
-export default function DashboardPage({ user }: DashboardPageProps) {
+export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.id) {
-            console.log(`DashboardPage: Cannot fetch data, user is missing.`);
+        if (!user?.id || !token) {
+             console.log(`DashboardPage: Cannot fetch data, user or token is missing. {userId: ${user?.id}, tokenExists: ${!!token}}`);
             return;
         }
         
@@ -82,8 +83,8 @@ export default function DashboardPage({ user }: DashboardPageProps) {
         setIsDataLoading(true);
         try {
             const [statsResponse, channelsResponse] = await Promise.all([
-                getDashboardOverview(user.id),
-                getChannels(user.id)
+                getDashboardOverview(user.id, token),
+                getChannels(user.id, token)
             ]);
             
             console.log("DashboardPage: Successfully fetched data.", { statsResponse, channelsResponse });
@@ -97,7 +98,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
             console.log("DashboardPage: Finished fetching data.");
             setIsDataLoading(false);
         }
-    }, [user?.id]);
+    }, [user?.id, token]);
 
     useEffect(() => {
         fetchDashboardData();

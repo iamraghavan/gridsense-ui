@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   KeyRound,
@@ -38,7 +38,7 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { getUserFromCache, saveUserToCache, clearUserFromCache } from '@/lib/user-cache';
+import { clearUserFromCache } from '@/lib/user-cache';
 
 function UserMenu({ user }: { user: User }) {
     const handleLogout = async () => {
@@ -112,44 +112,42 @@ function LoadingSkeleton() {
 // This is the new, robust layout for the authenticated part of the app.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
+  const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   React.useEffect(() => {
     async function initializeSession() {
       console.log("AppLayout: Initializing session...");
       
-      const userParam = searchParams.get('user');
-      if (userParam) {
-        try {
-          const userData = JSON.parse(decodeURIComponent(userParam));
-          console.log("AppLayout: Found user data in URL. Caching and setting user.", userData);
-          saveUserToCache(userData);
-          setUser(userData);
-          router.replace(pathname, { scroll: false });
-          setIsLoading(false);
-          return;
-        } catch (e) {
-          console.error("AppLayout: Failed to parse user from URL", e);
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.user && data.token) {
+                console.log("AppLayout: User data fetched successfully on client-side:", data);
+                setUser(data.user);
+                setToken(data.token);
+            } else {
+                 console.error("AppLayout: Auth response missing user or token", data);
+                 await logout();
+            }
+        } else {
+            console.error("AppLayout: Failed to fetch user from /api/auth/me, logging out.", res.status);
+            await logout();
         }
-      }
-
-      const cachedUser = getUserFromCache();
-      if (cachedUser) {
-        console.log("AppLayout: Found user in cache.", cachedUser);
-        setUser(cachedUser);
+      } catch (e) {
+        console.error("AppLayout: Exception during user fetch, logging out.", e);
+        await logout();
+      } finally {
         setIsLoading(false);
-        return;
+         console.log("AppLayout: Finished fetching user, setting isLoading to false.");
       }
-      
-      console.log("AppLayout: No user in cache or URL, attempting to log out.");
-      await logout();
     }
 
     initializeSession();
-  }, [pathname, router, searchParams]);
+  }, []);
   
   const navItems = React.useMemo(() => {
     if (!user?.id) return [];
@@ -163,9 +161,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return <LoadingSkeleton />;
   }
-
-  if (!user) {
-    // This case should ideally not be hit if logout works correctly, but it's a safeguard.
+  
+  // This is the critical change. We GUARANTEE that user and token are available
+  // before we attempt to render the children.
+  if (!user || !token) {
+    // This state should ideally trigger a redirect to /login, but for now, a skeleton is a safe fallback.
+    // The initializeSession() effect will handle the logout() if the fetch fails.
     return <LoadingSkeleton />;
   }
 
@@ -173,7 +174,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // @ts-ignore
-      return React.cloneElement(child, { user });
+      return React.cloneElement(child, { user, token });
     }
     return child;
   });
