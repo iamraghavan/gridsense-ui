@@ -3,36 +3,35 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { AUTH_TOKEN_COOKIE_NAME } from '@/lib/constants';
 
-// This is a list of pages that are accessible to everyone, even unauthenticated users.
 const PUBLIC_ROUTES = ['/login', '/register', '/'];
-
-// This is a list of pages that are part of the authenticated application.
-// We use `startsWith` to match dynamic routes like /dashboard/[userId] and /channels/[channelId]
-const PROTECTED_ROUTE_PREFIXES = ['/dashboard', '/channels', '/api-keys'];
+const PROTECTED_ROUTE_PREFIX = '/dashboard';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(AUTH_TOKEN_COOKIE_NAME)?.value;
 
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
-  const isProtectedRoute = PROTECTED_ROUTE_PREFIXES.some(prefix => pathname.startsWith(prefix));
+  const isProtectedRoute = pathname.startsWith(PROTECTED_ROUTE_PREFIX);
 
   if (token) {
-    // USER IS AUTHENTICATED
-
-    // If an authenticated user tries to access a public route (e.g., login, register, home),
-    // redirect them to a generic /dashboard path. The AppLayout's logic will handle
-    // fetching the correct user ID and displaying the right content.
+    // If user is authenticated
     if (isPublicRoute) {
-      // Using new URL() ensures the redirect is absolute
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      // Redirect from public routes like /login, /register, / to the dashboard
+      // We don't know the userId here, so we redirect to a generic path.
+      // The AppLayout will fetch the user and handle the final URL.
+      return NextResponse.redirect(new URL(PROTECTED_ROUTE_PREFIX, request.url));
     }
-  } else {
-    // USER IS NOT AUTHENTICATED
+    // If the user tries to go to just /dashboard, we can't know their ID.
+    // The AppLayout will handle fetching the user and redirecting to /dashboard/[userId]
+    // if it gets a user object back. So we can just let this pass.
+    if (pathname === PROTECTED_ROUTE_PREFIX) {
+        return NextResponse.next();
+    }
 
-    // If a non-authenticated user tries to access a protected app route,
-    // redirect them to the login page.
+  } else {
+    // If user is not authenticated
     if (isProtectedRoute) {
+        // Redirect from protected routes to the login page
         let from = pathname;
         if (request.nextUrl.search) {
             from += request.nextUrl.search;
@@ -43,7 +42,6 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Allow the request to proceed if no redirect conditions are met.
   return NextResponse.next();
 }
 

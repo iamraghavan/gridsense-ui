@@ -30,32 +30,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Rss, Activity, Calendar, Tag } from "lucide-react";
 import type { Channel, ChannelDataPoint, User } from "@/types";
-import { API_URL, API_KEY } from "@/lib/constants";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getChannelDetails } from "@/services/channelService";
 
 type CombinedChannel = Channel & { history: ChannelDataPoint[] };
-
-async function getChannelDetails(channelId: string, token: string): Promise<CombinedChannel | null> {
-  try {
-    const res = await fetch(`${API_URL}/channels/${channelId}`, {
-      headers: {
-        "x-api-key": API_KEY,
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-     console.log(`Response for channel ${channelId}:`, await res.clone().json()); // Log the response
-    if (!res.ok) {
-        console.error("Failed to fetch channel details:", res.status, await res.text());
-        return null;
-    }
-    return res.json();
-  } catch (error) {
-    console.error("Failed to fetch channel details", error);
-    return null;
-  }
-}
 
 function StatCard({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) {
     return (
@@ -71,11 +50,15 @@ function StatCard({ title, value, icon: Icon }: { title: string, value: string |
     );
 }
 
-// This component now receives the token as a prop from AppLayout
-export default function ChannelDetailsPage({ params, token: initialToken }: { params: { channelId: string }, token?: string }) {
+interface ChannelDetailsPageProps {
+    params: { userId: string, channelId: string };
+    user: User; // Injected by AppLayout
+    token: string; // Injected by AppLayout
+}
+
+export default function ChannelDetailsPage({ params, token: initialToken, user }: ChannelDetailsPageProps) {
     const [channel, setChannel] = useState<CombinedChannel | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    // The token is passed as a prop, making it available immediately.
     const token = initialToken;
 
     const fetchChannelData = useCallback(async (authToken: string) => {
@@ -94,9 +77,6 @@ export default function ChannelDetailsPage({ params, token: initialToken }: { pa
         if (token) {
             fetchChannelData(token);
         } else {
-            // If there's no token, it might mean the layout is still loading.
-            // Or the user is unauthenticated, in which case middleware should have redirected.
-            // We set loading to false to avoid an infinite spinner if something goes wrong.
             setIsLoading(false);
         }
     }, [token, fetchChannelData]);
@@ -116,7 +96,6 @@ export default function ChannelDetailsPage({ params, token: initialToken }: { pa
     
     const chartData = useMemo(() => {
         if (!channel?.history) return [];
-        // The API returns history sorted descending, so we reverse it for charting
         return channel.history.map(item => ({
             ...item.data,
             date: new Date(item.createdAt).toLocaleTimeString(),
@@ -147,7 +126,7 @@ export default function ChannelDetailsPage({ params, token: initialToken }: { pa
                 </CardHeader>
                 <CardContent>
                     <Button asChild variant="outline">
-                        <Link href="/channels">
+                        <Link href={`/dashboard/${user.id}/channel`}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Go Back to Channels
                         </Link>
                     </Button>
@@ -160,7 +139,7 @@ export default function ChannelDetailsPage({ params, token: initialToken }: { pa
     <div className="space-y-6">
         <div>
             <Button asChild variant="outline" size="sm" className="mb-4">
-                <Link href="/channels">
+                <Link href={`/dashboard/${user.id}/channel`}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Channels
                 </Link>
             </Button>

@@ -40,7 +40,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState, useCallback } from "react";
-import { API_URL, API_KEY } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -55,68 +54,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { getChannels, createChannel, deleteChannel } from "@/services/channelService";
+
 
 interface ChannelsPageProps {
   user: User; // Injected by AppLayout
   token: string; // Injected by AppLayout
-}
-
-async function getChannels(userId: string, token: string): Promise<Channel[]> {
-  try {
-    const res = await fetch(`${API_URL}/channels/user/${userId}`, {
-      headers: {
-        "x-api-key": API_KEY,
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-    console.log(`Response for user ${userId} channels:`, await res.clone().json()); // Log the response
-    if (!res.ok) {
-        console.error("Failed to fetch channels:", res.status, await res.text());
-        return [];
-    }
-    const data = await res.json();
-    return Array.isArray(data.channels) ? data.channels : [];
-  } catch (error) {
-    console.error("Failed to fetch channels", error);
-    return [];
-  }
-}
-
-async function createChannel(channelData: {
-    projectName: string;
-    description: string;
-    fields: { name: string; unit: string }[];
-  }, token: string): Promise<any> {
-  const res = await fetch(`${API_URL}/channels`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "Authorization": `Bearer ${token}`,
-    },
-    body: JSON.stringify(channelData),
-  });
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Failed to create channel.");
-  }
-  return res.json();
-}
-
-async function deleteChannel(channelId: string, token: string): Promise<any> {
-    const res = await fetch(`${API_URL}/channels/${channelId}`, {
-        method: 'DELETE',
-        headers: {
-            "x-api-key": API_KEY,
-            "Authorization": `Bearer ${token}`
-        }
-    });
-    if(!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to delete channel.");
-    }
-    return res.json();
 }
 
 function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: () => void, token: string | undefined }) {
@@ -324,7 +267,7 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
    const fetchChannels = useCallback(() => {
     if (user?.id && token) {
         setIsLoading(true);
-        getChannels(user.id, token).then(setChannels).finally(() => setIsLoading(false));
+        getChannels(user.id, token).then(data => setChannels(data.channels)).finally(() => setIsLoading(false));
     }
    }, [user?.id, token]);
   
@@ -397,7 +340,7 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem asChild>
-                            <Link href={`/channels/${channel.channel_id}`} className="w-full">
+                            <Link href={`/dashboard/${user.id}/channel/${channel.channel_id}`} className="w-full">
                                 View Details & Chart
                             </Link>
                           </DropdownMenuItem>

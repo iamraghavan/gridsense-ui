@@ -95,8 +95,6 @@ function ApiKeyCard({ apiKey, isLoading }: { apiKey: string | null, isLoading: b
 }
 
 export default function ApiKeysPage({ user }: ApiKeysPageProps) {
-  // The user object is now passed as a prop from the layout.
-  // We can determine loading state by checking if the user prop exists.
   const isLoading = !user;
 
   return (

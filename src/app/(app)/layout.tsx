@@ -99,7 +99,7 @@ function LoadingSkeleton() {
 }
 
 // This is the new, robust layout for the authenticated part of the app.
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children, params }: { children: React.ReactNode, params: { userId: string } }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [token, setToken] = React.useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -111,15 +111,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch('/api/auth/me'); // This calls the new route handler
         if (!res.ok) {
-          // If the token is invalid or expired, the middleware should have already redirected.
-          // As a fallback, force a logout.
           await logout();
           return;
         }
         const data = await res.json();
         console.log("User data fetched successfully on client-side:", data); // Per user request
         setUser(data.user);
-        setToken(data.token); // The BFF returns the user and the original token
+        setToken(data.token);
       } catch (error) {
         console.error("Failed to fetch user, logging out.", error);
         await logout();
@@ -133,9 +131,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = React.useMemo(() => {
     if (!user?.id) return [];
     return [
-      { href: `/dashboard/${user.id}`, icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/channels', icon: Rss, label: 'Channels' },
-      { href: '/api-keys', icon: KeyRound, label: 'API Keys' },
+      { href: `/dashboard/${user.id}`, icon: LayoutDashboard, label: 'Dashboard', exact: true },
+      { href: `/dashboard/${user.id}/channel`, icon: Rss, label: 'Channels', exact: false },
+      { href: `/dashboard/${user.id}/apikey`, icon: KeyRound, label: 'API Keys', exact: false },
     ];
   }, [user?.id]);
 
@@ -143,19 +141,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <LoadingSkeleton />;
   }
   
-  // The middleware should prevent this state, but as a fallback:
   if (!user) {
     return <LoadingSkeleton />;
   }
   
-  // Clone children and inject user/token props for them to use
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      // @ts-ignore - a bit of a hack to pass props, but effective
-      return React.cloneElement(child, { user, token });
+      // @ts-ignore
+      return React.cloneElement(child, { user, token, params });
     }
     return child;
   });
+  
+  const getPageTitle = () => {
+    const currentPath = pathname.split('?')[0];
+    const activeItem = navItems.find(item => currentPath.startsWith(item.href));
+    if (pathname.includes('/channel/')) {
+        return "Channel Details";
+    }
+    return activeItem?.label || 'Dashboard';
+  }
 
   return (
     <SidebarProvider>
@@ -171,7 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <SidebarMenuItem key={item.href}>
                              <Link href={item.href} className="w-full">
                                 <SidebarMenuButton
-                                    isActive={pathname.startsWith(item.href)}
+                                    isActive={item.exact ? pathname === item.href : pathname.startsWith(item.href)}
                                     tooltip={{ children: item.label }}
                                 >
                                     <item.icon />
@@ -189,7 +194,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarInset>
             <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
                 <SidebarTrigger />
-                <h1 className="font-semibold text-lg capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h1>
+                <h1 className="font-semibold text-lg capitalize">{getPageTitle()}</h1>
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
                 {childrenWithProps}

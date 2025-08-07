@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, MoreHorizontal, Rss, Activity, BarChart } from "lucide-react";
 import type { Channel, User } from "@/types";
-import { API_URL, API_KEY } from "@/lib/constants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,37 +30,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getChannels } from "@/services/channelService";
 
 interface DashboardPageProps {
   user: User; // Injected by AppLayout
   token: string; // Injected by AppLayout
-}
-
-async function getChannels(userId: string, token: string): Promise<{ count: number, channels: Channel[] }> {
-  // The user and token are guaranteed to exist by the time this is called.
-  try {
-    const res = await fetch(`${API_URL}/channels/user/${userId}`, {
-      headers: {
-        "x-api-key": API_KEY,
-        "Authorization": `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-     console.log(`Response for user ${userId} channels:`, await res.clone().json()); // Log the response
-    if (!res.ok) {
-        console.error("Failed to fetch channels:", res.status, await res.text());
-        return { count: 0, channels: [] };
-    }
-    const data = await res.json();
-    if (data && typeof data.count === 'number' && Array.isArray(data.channels)) {
-        return data;
-    }
-    console.error("Unexpected API response structure for channels:", data);
-    return { count: 0, channels: [] };
-  } catch (error) {
-    console.error("Failed to fetch channels", error);
-    return { count: 0, channels: [] };
-  }
 }
 
 function StatCard({ title, value, description, icon: Icon, isLoading }: { title: string, value: string | number, description: string, icon: React.ElementType, isLoading: boolean }) {
@@ -88,11 +61,9 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
     );
 }
 
-// The page now receives user and token as props, simplifying its logic.
 export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [channelCount, setChannelCount] = useState(0);
-    // The layout handles the main loading state. We only manage data-specific loading here.
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
@@ -109,7 +80,6 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     }, []);
 
     useEffect(() => {
-        // Fetch data now that user and token are guaranteed to be available from the layout.
         if (user?.id && token) {
             fetchDashboardData(user.id, token);
         }
@@ -117,7 +87,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
 
     const totalRequests = channels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
     const recentChannels = channels.slice(0, 5);
-    const isLoading = !user || isDataLoading; // Combined loading state
+    const isLoading = !user || isDataLoading;
 
     return (
         <div className="space-y-6">
@@ -130,7 +100,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                 </div>
                 <div>
                     <Button asChild>
-                        <Link href="/channels">Manage Channels <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <Link href={`/dashboard/${user.id}/channel`}>Manage Channels <ArrowRight className="ml-2 h-4 w-4" /></Link>
                     </Button>
                 </div>
             </div>
@@ -220,7 +190,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                <DropdownMenuItem asChild>
-                                  <Link href={`/channels/${channel.channel_id}`}>View Details & Chart</Link>
+                                  <Link href={`/dashboard/${user.id}/channel/${channel.channel_id}`}>View Details & Chart</Link>
                                </DropdownMenuItem>
                               <DropdownMenuItem disabled>Edit (soon)</DropdownMenuItem>
                             </DropdownMenuContent>
@@ -232,7 +202,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                     <TableRow>
                       <TableCell colSpan={5} className="text-center h-24">
                         No channels found.
-                        <Button variant="link" asChild><Link href="/channels">Create your first one!</Link></Button>
+                        <Button variant="link" asChild><Link href={`/dashboard/${user.id}/channel`}>Create your first one!</Link></Button>
                       </TableCell>
                     </TableRow>
                   )}
