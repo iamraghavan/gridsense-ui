@@ -23,8 +23,8 @@ async function fetchWithAuth(url: string, token: string, options: RequestInit = 
     return fetch(url, { ...options, headers, cache: "no-store" });
 }
 
-export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
-  const url = `${API_URL}/channels/user/${userId}`;
+export async function getChannels(token: string): Promise<ChannelsResponse> {
+  const url = `${API_URL}/channels`;
   const res = await fetchWithAuth(url, token);
   const data = await res.json();
   console.log(`[API RESPONSE] for user channels:`, data);

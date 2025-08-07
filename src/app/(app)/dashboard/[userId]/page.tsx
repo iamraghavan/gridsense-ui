@@ -74,8 +74,8 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.id || !token) {
-            console.log(`DashboardPage: Cannot fetch data, user or token is missing. {userId: ${user?.id}, tokenExists: ${!!token}}`);
+        if (!token) {
+            console.log(`DashboardPage: Cannot fetch data, token is missing.`);
             return;
         }
         
@@ -83,8 +83,8 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         setIsDataLoading(true);
         try {
             const [statsResponse, channelsResponse] = await Promise.all([
-                getDashboardOverview(user.id, token),
-                getChannels(user.id, token)
+                getDashboardOverview(token),
+                getChannels(token)
             ]);
             
             console.log("DashboardPage: Successfully fetched data.", { statsResponse, channelsResponse });
