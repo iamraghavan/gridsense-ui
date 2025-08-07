@@ -39,6 +39,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
   }
   
   const { email, password } = validatedFields.data;
+  let userId: string | undefined;
 
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -66,20 +67,28 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
       };
       
       const user: User = { id: data._id, name: data.name, email: data.email, apiKey: data.apiKey, createdAt: data.createdAt };
-      
+      userId = user.id;
+
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
-      
-      // Redirect to the dynamic user dashboard
-      redirect(`/dashboard/${user.id}`);
 
     } else {
        return { message: 'Login failed: No token received.' };
     }
 
   } catch (error) {
+     if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+      throw error;
+    }
     return { message: 'An unexpected error occurred.' };
   }
+  
+  if (userId) {
+    redirect(`/dashboard/${userId}`);
+  }
+
+  // This part should not be reached if login is successful
+  return { message: 'Login flow failed unexpectedly.' };
 }
 
 export async function register(prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -93,6 +102,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
   }
 
   const { name, email, password } = validatedFields.data;
+  let userId: string | undefined;
   
   try {
     const response = await fetch(`${API_URL}/auth/register`, {
@@ -121,19 +131,27 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       
       const userData = data.user;
       const user: User = { id: userData._id, name: userData.name, email: userData.email, apiKey: userData.apiKey, createdAt: userData.createdAt };
+      userId = user.id;
 
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
 
-      // Redirect to the dynamic user dashboard
-      redirect(`/dashboard/${user.id}`);
     } else {
         return { message: 'Registration failed: No token or user data received.' };
     }
 
   } catch (error) {
+     if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+      throw error;
+    }
     return { message: 'An unexpected error occurred during registration.' };
   }
+
+  if (userId) {
+    redirect(`/dashboard/${userId}`);
+  }
+   // This part should not be reached if registration is successful
+  return { message: 'Registration flow failed unexpectedly.' };
 }
 
 export async function logout() {
