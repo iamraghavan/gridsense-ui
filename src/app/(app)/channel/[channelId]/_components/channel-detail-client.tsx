@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -8,20 +8,22 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { Channel, ChannelHistory } from '@/types';
+import { useSocket } from '@/hooks/use-socket';
 
-function processChannelData(channel: Channel) {
-  const dataByField = channel.fields.reduce((acc, field) => {
+type ChartableData = Record<string, { unit: string; data: { time: string; value: number }[] }>;
+
+function processChannelData(channel: Channel): ChartableData {
+  const dataByField: ChartableData = channel.fields.reduce((acc, field) => {
     acc[field.name] = {
       unit: field.unit,
       data: [],
     };
     return acc;
-  }, {} as Record<string, { unit: string; data: any[] }>);
+  }, {} as ChartableData);
 
   if (channel.history && channel.history.length > 0) {
     channel.history.forEach((entry: ChannelHistory) => {
       Object.entries(entry.data).forEach(([fieldName, value]) => {
-        // Find the field object that matches the fieldName from the entry data
         const fieldConfig = channel.fields.find(f => f.name === fieldName);
         if (fieldConfig && dataByField[fieldConfig.name]) {
           dataByField[fieldConfig.name].data.push({
@@ -33,7 +35,6 @@ function processChannelData(channel: Channel) {
     });
   }
 
-  // Reverse the data arrays so the chart shows oldest to newest
   Object.values(dataByField).forEach(field => {
     field.data.reverse();
   });
@@ -42,12 +43,46 @@ function processChannelData(channel: Channel) {
 }
 
 
-export function ChannelDetailClient({ channel }: { channel: Channel }) {
-  const chartableData = processChannelData(channel);
+export function ChannelDetailClient({ channel: initialChannel }: { channel: Channel }) {
+  const [channel, setChannel] = useState<Channel>(initialChannel);
+  const [chartableData, setChartableData] = useState<ChartableData>(() => processChannelData(initialChannel));
+
+  const { socket } = useSocket(initialChannel.userId);
+
+  useEffect(() => {
+    setChartableData(processChannelData(channel));
+  }, [channel]);
+
+  useEffect(() => {
+    if (!socket) return;
+    
+    // Join a room for this specific channel
+    socket.emit('joinChannel', channel.channel_id);
+
+    const handleNewData = (newHistoryEntry: ChannelHistory) => {
+        if(newHistoryEntry.channelId === channel.channel_id) {
+            setChannel(prevChannel => {
+                const newHistory = [...(prevChannel.history || []), newHistoryEntry];
+                // Optional: Limit the history size to prevent memory leaks on long-running pages
+                if (newHistory.length > 200) { 
+                    newHistory.shift();
+                }
+                return { ...prevChannel, history: newHistory };
+            });
+        }
+    };
+
+    socket.on('historyUpdate', handleNewData);
+
+    return () => {
+        socket.emit('leaveChannel', channel.channel_id);
+        socket.off('historyUpdate', handleNewData);
+    };
+  }, [socket, channel.channel_id]);
 
   return (
     <div className="flex-1 space-y-4 pt-6">
-      <Link href="/channel" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+      <Link href={`/dashboard/${channel.userId}/channel`} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Channels
       </Link>

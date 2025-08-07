@@ -7,8 +7,8 @@ import type { Channel, ChannelStats, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useSocket } from '@/hooks/use-socket';
 
 function StatCard({ title, value, isLoading }: { title: string; value: string | number; isLoading: boolean }) {
   return (
@@ -32,7 +32,6 @@ function ChannelLastUpdate({ lastUpdate }: { lastUpdate?: string }) {
 
     useEffect(() => {
         if (lastUpdate) {
-            // This now only runs on the client, after hydration, avoiding the mismatch.
             setFormattedDate(format(new Date(lastUpdate), 'PPpp'));
         }
     }, [lastUpdate]);
@@ -41,14 +40,12 @@ function ChannelLastUpdate({ lastUpdate }: { lastUpdate?: string }) {
         return <>N/A</>;
     }
     
-    // Show a skeleton while waiting for client-side hydration and formatting
     if (!formattedDate) {
         return <Skeleton className="h-5 w-40" />;
     }
 
     return <>{formattedDate}</>;
 }
-
 
 interface DashboardClientProps {
   user: User;
@@ -57,19 +54,34 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ user, initialStats, initialChannels }: DashboardClientProps) {
-  const [stats] = useState<ChannelStats | null>(initialStats);
-  const [channels] = useState<Channel[]>(initialChannels);
-  const [isLoading, setIsLoading] = useState(!initialStats && !initialChannels); 
-  const { toast } = useToast();
+  const [stats, setStats] = useState<ChannelStats | null>(initialStats);
+  const [channels, setChannels] = useState<Channel[]>(initialChannels);
+  const [isLoading, setIsLoading] = useState(!initialStats && !initialChannels);
+  
+  const { socket } = useSocket(user?._id);
 
   useEffect(() => {
-    if (!initialStats || initialChannels.length === 0) {
-        if (!isLoading) {
-          // This can be used to show a toast if server-side fetch failed
-          // For now we assume server fetch is reliable if props are passed.
-        }
-    }
-  }, [initialStats, initialChannels, isLoading, toast]);
+    if (!socket) return;
+    
+    socket.on('latestData', (data: { channelId: string; latestData: Record<string, number>, lastUpdate: string }) => {
+        setChannels(prevChannels =>
+            prevChannels.map(channel =>
+                channel.channel_id === data.channelId
+                    ? { ...channel, latestData: data.latestData, lastUpdate: data.lastUpdate }
+                    : channel
+            )
+        );
+    });
+     
+    socket.on('statsUpdate', (newStats: ChannelStats) => {
+        setStats(newStats);
+    });
+
+    return () => {
+        socket.off('latestData');
+        socket.off('statsUpdate');
+    };
+  }, [socket]);
   
   return (
     <div className="flex-1 space-y-4 pt-6">
@@ -130,7 +142,7 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                                        <ChannelLastUpdate lastUpdate={channel.lastUpdate} />
                                     </TableCell>
                                     <TableCell>
-                                        {channel.latestData ? `${Object.values(channel.latestData)[0]}` : 'N/A'}
+                                        {channel.latestData ? `${Object.keys(channel.latestData)[0]}: ${Object.values(channel.latestData)[0]}` : 'N/A'}
                                     </TableCell>
                                      <TableCell className="text-right">
                                         <Button variant="outline" size="sm" asChild>
