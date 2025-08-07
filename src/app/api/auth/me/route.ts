@@ -1,4 +1,3 @@
-
 // /src/app/api/auth/me/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { AUTH_TOKEN_COOKIE_NAME, API_URL, API_KEY } from '@/lib/constants';
@@ -34,20 +33,20 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    // Your backend for a successful login/register returns { user: {...}, ... }
+    // Your backend for a successful login/register returns a flat object.
     // The /me endpoint also returns the user object directly.
-    const userObject = data.user || data;
-
-    if (!userObject || !userObject._id) {
+    if (!data || !data._id) {
         console.error("BFF: Malformed user data from /auth/me:", data);
         return NextResponse.json({ error: 'Invalid user data received from API' }, { status: 500 });
     }
-
+    
     // On success, return the user data and the token itself so the client can use it
     // for subsequent client-side API calls.
     // The user's ID is changed from `_id` to `id` for better client-side consistency.
+    const userObject = { ...data, id: data._id };
+    
     const responseData = {
-        user: { ...userObject, id: userObject._id },
+        user: userObject,
         token: token,
     };
     
