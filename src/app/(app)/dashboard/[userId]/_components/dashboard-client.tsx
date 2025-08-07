@@ -55,12 +55,14 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
   const [isLoading, setIsLoading] = useState(!initialStats && !initialChannels); 
   const { toast } = useToast();
 
-  if (!initialStats || initialChannels.length === 0) {
-      if (!isLoading) {
-        // This can be used to show a toast if server-side fetch failed
-        // For now we assume server fetch is reliable if props are passed.
-      }
-  }
+  useEffect(() => {
+    if (!initialStats || initialChannels.length === 0) {
+        if (!isLoading) {
+          // This can be used to show a toast if server-side fetch failed
+          // For now we assume server fetch is reliable if props are passed.
+        }
+    }
+  }, [initialStats, initialChannels, isLoading, toast]);
   
   return (
     <div className="flex-1 space-y-4 pt-6">
