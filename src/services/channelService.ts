@@ -11,7 +11,7 @@ type CombinedChannel = Channel & { history: ChannelDataPoint[] };
 
 export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
   const url = `${API_URL}/channels/user/${userId}`;
-  console.log(`Fetching channels for user: ${userId} from ${url}`);
+  console.log(`Fetching channels for user: ${userId} from ${url} with token.`);
   const res = await fetch(url, {
     headers: {
       "x-api-key": API_KEY,
@@ -33,7 +33,7 @@ export async function getChannels(userId: string, token: string): Promise<Channe
 
 export async function getChannelDetails(channelId: string, token: string): Promise<CombinedChannel> {
   const url = `${API_URL}/channels/${channelId}`;
-  console.log(`Fetching details for channel: ${channelId} from ${url}`);
+  console.log(`Fetching details for channel: ${channelId} from ${url} with token.`);
   const res = await fetch(url, {
     headers: {
       "x-api-key": API_KEY,
@@ -56,7 +56,7 @@ export async function createChannel(channelData: {
     fields: { name: string; unit: string }[];
   }, token: string): Promise<any> {
   const url = `${API_URL}/channels`;
-  console.log('Creating new channel with data:', channelData, `at ${url}`);
+  console.log('Creating new channel with data:', channelData, `at ${url} with token.`);
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -78,7 +78,7 @@ export async function createChannel(channelData: {
 
 export async function deleteChannel(channelId: string, token: string): Promise<any> {
     const url = `${API_URL}/channels/${channelId}`;
-    console.log(`Deleting channel: ${channelId} at ${url}`);
+    console.log(`Deleting channel: ${channelId} at ${url} with token.`);
     const res = await fetch(url, {
         method: 'DELETE',
         headers: {
@@ -94,7 +94,7 @@ export async function deleteChannel(channelId: string, token: string): Promise<a
     }
     
     // DELETE requests might not have a body, so we check for status 204 (No Content)
-    if (res.status === 204) {
+    if (res.status === 204 || res.status === 200) {
         return { success: true };
     }
     

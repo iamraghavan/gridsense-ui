@@ -9,7 +9,7 @@ type DashboardStats = {
 
 export async function getDashboardOverview(userId: string, token: string): Promise<DashboardStats> {
   const url = `${API_URL}/channels/user/${userId}/stats/overview`;
-  console.log(`Fetching dashboard overview for user: ${userId} from ${url}`);
+  console.log(`Fetching dashboard overview for user: ${userId} from ${url} with token.`);
   const res = await fetch(url, {
     headers: {
       "x-api-key": API_KEY,

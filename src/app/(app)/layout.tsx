@@ -77,21 +77,25 @@ function LoadingSkeleton() {
     return (
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
         <div className="hidden border-r bg-card md:block p-4 space-y-4">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+            <div className="flex items-center gap-2">
+                 <Skeleton className="h-8 w-8" />
+                 <Skeleton className="h-6 w-32" />
+            </div>
+            <div className="mt-8 space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+            </div>
         </div>
         <div className="flex flex-col">
-            <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-                <div className="w-full flex-1">
-                    <Skeleton className="h-8 w-1/2" />
-                </div>
+            <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+                <Skeleton className="h-8 w-8 md:hidden" />
+                <Skeleton className="h-6 w-32" />
                 <Skeleton className="h-10 w-10 rounded-full" />
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
-                <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-64 w-full" />
             </main>
         </div>
       </div>
@@ -108,6 +112,7 @@ export default function AppLayout({ children, params }: { children: React.ReactN
   React.useEffect(() => {
     // Fetch user data from our secure BFF endpoint
     async function fetchUser() {
+      setIsLoading(true);
       try {
         const res = await fetch('/api/auth/me'); // This calls the new route handler
         if (!res.ok) {
@@ -137,11 +142,7 @@ export default function AppLayout({ children, params }: { children: React.ReactN
     ];
   }, [user?.id]);
 
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-  
-  if (!user) {
+  if (isLoading || !user || !token) {
     return <LoadingSkeleton />;
   }
   

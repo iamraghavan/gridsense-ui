@@ -71,12 +71,12 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
 export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [stats, setStats] = useState<Stats>({ totalChannels: 0, totalRequests: 0, totalFields: 0});
-    const [isDataLoading, setIsDataLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
         if (!user?.id || !token) return;
         
-        setIsDataLoading(true);
+        setIsLoading(true);
         try {
             const [channelsResponse, statsResponse] = await Promise.all([
                 getChannels(user.id, token),
@@ -89,7 +89,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         } catch (error) {
             console.error("Failed to fetch dashboard data", error);
         } finally {
-            setIsDataLoading(false);
+            setIsLoading(false);
         }
     }, [user?.id, token]);
 
@@ -98,8 +98,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     }, [fetchDashboardData]);
 
     const recentChannels = channels.slice(0, 5);
-    const isLoading = !user || isDataLoading;
-
+    
     return (
         <div className="space-y-6">
            <div className="flex items-center justify-between">
