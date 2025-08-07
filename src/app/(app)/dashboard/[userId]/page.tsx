@@ -34,8 +34,8 @@ import { getChannels } from "@/services/channelService";
 import { getDashboardOverview } from "@/services/statsService";
 
 interface DashboardPageProps {
-  user: User; // Injected by AppLayout
-  token: string; // Injected by AppLayout
+  user: User;
+  token: string;
 }
 
 type Stats = {

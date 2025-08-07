@@ -158,9 +158,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <LoadingSkeleton />;
   }
 
+  // This is the critical change: we clone the child element and pass the new props.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      // @ts-ignore
+      // @ts-ignore - We are knowingly adding props to the child component
       return React.cloneElement(child, { user, token });
     }
     return child;
