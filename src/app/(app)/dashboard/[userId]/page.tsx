@@ -119,21 +119,21 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard 
                     title="Total Channels" 
-                    value={isLoading ? '...' : stats.totalChannels} 
+                    value={stats.totalChannels} 
                     description={`You have ${stats.totalChannels} channels in total.`} 
                     icon={Rss} 
                     isLoading={isLoading} 
                 />
                 <StatCard 
                     title="Total Requests" 
-                    value={isLoading ? '...' : stats.totalRequests.toLocaleString()} 
+                    value={stats.totalRequests.toLocaleString()} 
                     description="Total data points from all channels." 
                     icon={Activity} 
                     isLoading={isLoading} 
                 />
                  <StatCard 
                     title="Active Fields" 
-                    value={isLoading ? '...' : stats.totalFields} 
+                    value={stats.totalFields} 
                     description="Total sensor fields being monitored." 
                     icon={BarChart} 
                     isLoading={isLoading} 
