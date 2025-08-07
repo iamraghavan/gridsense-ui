@@ -46,15 +46,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <div className='ml-auto flex items-center gap-4'>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-auto gap-2 p-1 rounded-full">
-                        <div className="text-right">
-                           <p className="text-sm font-medium">{user.name}</p>
-                           <p className="text-xs text-muted-foreground">Profile</p>
-                        </div>
+                    <Button variant="ghost" className="relative h-auto gap-2 p-1 rounded-full flex items-center">
                         <Avatar>
                             <AvatarImage src={`https://placehold.co/100x100.png`} alt={user.name} />
                             <AvatarFallback>{userInitials}</AvatarFallback>
                         </Avatar>
+                        <div className="text-left">
+                           <p className="text-sm font-medium">{user.name}</p>
+                           <p className="text-xs text-muted-foreground">Profile</p>
+                        </div>
                         <span className="sr-only">Toggle user menu</span>
                     </Button>
                     </DropdownMenuTrigger>
