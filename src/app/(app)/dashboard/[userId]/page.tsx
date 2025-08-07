@@ -90,7 +90,6 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
 export default function DashboardPage({ params, user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [channelCount, setChannelCount] = useState(0);
-    const [totalRequests, setTotalRequests] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
@@ -99,10 +98,6 @@ export default function DashboardPage({ params, user, token }: DashboardPageProp
             const { count, channels: fetchedChannels } = await getChannels(userId, authToken);
             setChannels(fetchedChannels);
             setChannelCount(count);
-
-            const total = fetchedChannels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
-            setTotalRequests(total);
-
         } catch (error) {
             console.error("Failed to fetch dashboard data", error);
         } finally {
@@ -111,13 +106,16 @@ export default function DashboardPage({ params, user, token }: DashboardPageProp
     }, []);
 
     useEffect(() => {
+        // user and token are now passed as props, so we can rely on them
         if (user?.id && token) {
             fetchDashboardData(user.id, token);
         } else {
+             // If no user/token, stop loading. The layout would likely not render this anyway.
              setIsLoading(false);
         }
     }, [user, token, fetchDashboardData]);
 
+    const totalRequests = channels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
     const recentChannels = channels.slice(0, 5);
 
     return (

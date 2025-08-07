@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, redirect } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   KeyRound,
@@ -106,12 +106,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             setToken(tokenCookie);
         } catch (e) {
             console.error("Failed to parse user cookie:", e);
-            // This case is handled by the middleware, but as a fallback:
             setUser(null);
             setToken(undefined);
         }
     }
-    // No 'else' needed as middleware handles redirection for unauthenticated users.
+    // The middleware handles redirection, so if we're here, we assume we should have cookies.
+    // If not, it's a state that should resolve or be handled by middleware on next navigation.
     setIsLoading(false);
   }, []);
 
@@ -150,9 +150,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!user || !token) {
-    // This state should ideally not be reached due to middleware.
-    // Returning a loader or null is better than attempting to render a broken layout.
-    return null;
+    // This state can be hit briefly before middleware redirects.
+    // Returning a loader is better than attempting to render a broken layout.
+    // Or null, since the screen will be blank for a moment before redirect.
+    return null; 
   }
 
   return (
@@ -184,7 +185,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
-                <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
+                <Link href={`/dashboard/${user.id}`} className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo />
                 </Link>
                 {navItems.map((item) => (

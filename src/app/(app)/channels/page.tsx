@@ -307,7 +307,7 @@ function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Ch
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
                         {isDeleting ? "Deleting..." : "Continue"}
                     </AlertDialogAction>
                 </AlertDialogFooter>

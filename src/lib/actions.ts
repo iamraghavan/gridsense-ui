@@ -80,6 +80,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
      if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
       throw error;
     }
+    console.error('Login error:', error);
     return { message: 'An unexpected error occurred.' };
   }
   

@@ -10,6 +10,8 @@ export function middleware(request: NextRequest) {
 
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
   const isHomePage = pathname === '/';
+  // Check if it's any page under the (app) group
+  const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/channels') || pathname.startsWith('/api-keys');
 
   if (token && userCookie) {
     // User is authenticated
@@ -21,8 +23,8 @@ export function middleware(request: NextRequest) {
         if (isAuthPage || isHomePage) {
             return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
-
-        // If user is on the base /dashboard path, ensure they are on their specific user dashboard
+        
+        // If user is on a generic app route like /dashboard, redirect to their specific one
         if (pathname === '/dashboard') {
              return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
@@ -36,13 +38,13 @@ export function middleware(request: NextRequest) {
     }
   } else {
     // User is not authenticated
-    // If trying to access a protected route (not auth page, not home page), redirect to login
-    if (!isAuthPage && !isHomePage) {
+    // If trying to access a protected app route, redirect to login
+    if (isAppRoute) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  // Allow the request to continue
+  // Allow the request to continue for all other cases
   return NextResponse.next();
 }
 
