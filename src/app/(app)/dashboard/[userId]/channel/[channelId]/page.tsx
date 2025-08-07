@@ -53,18 +53,16 @@ function StatCard({ title, value, icon: Icon }: { title: string, value: string |
 interface ChannelDetailsPageProps {
     params: { userId: string, channelId: string };
     user: User; // Injected by AppLayout
-    token: string; // Injected by AppLayout
 }
 
-export default function ChannelDetailsPage({ params, token: initialToken, user }: ChannelDetailsPageProps) {
+export default function ChannelDetailsPage({ params, user }: ChannelDetailsPageProps) {
     const [channel, setChannel] = useState<CombinedChannel | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const token = initialToken;
 
-    const fetchChannelData = useCallback(async (authToken: string) => {
+    const fetchChannelData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const channelData = await getChannelDetails(params.channelId, authToken);
+            const channelData = await getChannelDetails(params.channelId);
             setChannel(channelData);
         } catch (error) {
             console.error("Failed to fetch channel data", error);
@@ -74,12 +72,8 @@ export default function ChannelDetailsPage({ params, token: initialToken, user }
     }, [params.channelId]);
 
     useEffect(() => {
-        if (token) {
-            fetchChannelData(token);
-        } else {
-            setIsLoading(false);
-        }
-    }, [token, fetchChannelData]);
+        fetchChannelData();
+    }, [fetchChannelData]);
 
     const chartConfig = useMemo(() => {
         const config: ChartConfig = {};

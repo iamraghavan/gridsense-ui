@@ -59,10 +59,9 @@ import { getChannels, createChannel, deleteChannel } from "@/services/channelSer
 
 interface ChannelsPageProps {
   user: User; // Injected by AppLayout
-  token: string; // Injected by AppLayout
 }
 
-function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: () => void, token: string | undefined }) {
+function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
@@ -88,10 +87,6 @@ function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: ()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) {
-        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to create a channel." });
-        return;
-    }
     setIsSubmitting(true);
     try {
       const filteredFields = fields.filter(f => f.name.trim() !== "");
@@ -105,7 +100,7 @@ function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: ()
         return;
       }
 
-      await createChannel({ projectName, description, fields: filteredFields }, token);
+      await createChannel({ projectName, description, fields: filteredFields });
       toast({
         title: "Channel Created!",
         description: "Your new channel has been created successfully.",
@@ -212,18 +207,14 @@ function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: ()
   );
 }
 
-function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Channel, token: string | undefined, onChannelDeleted: () => void }) {
+function DeleteChannelDialog({ channel, onChannelDeleted }: { channel: Channel, onChannelDeleted: () => void }) {
     const [isDeleting, setIsDeleting] = useState(false);
     const { toast } = useToast();
 
     const handleDelete = async () => {
-        if (!token) {
-            toast({ variant: "destructive", title: "Authentication Error" });
-            return;
-        }
         setIsDeleting(true);
         try {
-            await deleteChannel(channel.channel_id, token);
+            await deleteChannel(channel.channel_id);
             toast({ title: "Channel Deleted", description: `The channel "${channel.projectName}" has been deleted.`});
             onChannelDeleted();
         } catch (error: any) {
@@ -260,19 +251,19 @@ function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Ch
     );
 }
 
-export default function ChannelsPage({ user, token }: ChannelsPageProps) {
+export default function ChannelsPage({ user }: ChannelsPageProps) {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
    const fetchChannels = useCallback(() => {
-    if (token) {
+    if (user.id) {
         setIsLoading(true);
-        getChannels(token)
+        getChannels(user.id)
             .then(data => setChannels(data.channels))
             .catch(error => console.error("Failed to fetch channels", error))
             .finally(() => setIsLoading(false));
     }
-   }, [token]);
+   }, [user.id]);
   
   useEffect(() => {
     fetchChannels();
@@ -288,7 +279,7 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
           </CardDescription>
         </div>
         <div>
-            <CreateChannelDialog onChannelCreated={fetchChannels} token={token} />
+            <CreateChannelDialog onChannelCreated={fetchChannels} />
         </div>
       </CardHeader>
       <CardContent>
@@ -344,7 +335,7 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem disabled>Edit (soon)</DropdownMenuItem>
-                          <DeleteChannelDialog channel={channel} token={token} onChannelDeleted={fetchChannels} />
+                          <DeleteChannelDialog channel={channel} onChannelDeleted={fetchChannels} />
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

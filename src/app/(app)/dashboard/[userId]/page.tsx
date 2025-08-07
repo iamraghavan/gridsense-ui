@@ -35,7 +35,6 @@ import { getDashboardOverview } from "@/services/statsService";
 
 interface DashboardPageProps {
   user: User; // Injected by AppLayout
-  token: string; // Injected by AppLayout
 }
 
 type Stats = {
@@ -68,14 +67,14 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
     );
 }
 
-export default function DashboardPage({ user, token }: DashboardPageProps) {
+export default function DashboardPage({ user }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
-    const [stats, setStats] = useState<Stats>({ totalChannels: 0, totalRequests: 0, totalFields: 0});
+    const [stats, setStats] = useState<Stats | null>(null);
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.id || !token) {
-            console.log(`DashboardPage: Cannot fetch data, user or token is missing.`, { userId: user?.id, tokenExists: !!token });
+        if (!user?.id) {
+            console.log(`DashboardPage: Cannot fetch data, user is missing.`);
             return;
         }
         
@@ -83,20 +82,22 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         setIsDataLoading(true);
         try {
             const [statsResponse, channelsResponse] = await Promise.all([
-                getDashboardOverview(user.id, token),
-                getChannels(user.id, token)
+                getDashboardOverview(user.id),
+                getChannels(user.id)
             ]);
             
+            console.log("DashboardPage: Successfully fetched data.", { statsResponse, channelsResponse });
             setStats(statsResponse);
             setChannels(channelsResponse.channels);
 
         } catch (error) {
             console.error("DashboardPage: Failed to fetch dashboard data", error);
+            // Optionally set an error state here to show in the UI
         } finally {
             console.log("DashboardPage: Finished fetching data.");
             setIsDataLoading(false);
         }
-    }, [user?.id, token]);
+    }, [user?.id]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -123,21 +124,21 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard 
                     title="Total Channels" 
-                    value={stats.totalChannels} 
-                    description={`You have ${stats.totalChannels} active channels.`} 
+                    value={stats?.totalChannels ?? 0} 
+                    description={`You have ${stats?.totalChannels ?? 0} active channels.`} 
                     icon={Rss} 
                     isLoading={isDataLoading} 
                 />
                 <StatCard 
                     title="Total Requests" 
-                    value={stats.totalRequests.toLocaleString()} 
+                    value={stats?.totalRequests?.toLocaleString() ?? 0} 
                     description="Total data points from all channels." 
                     icon={Activity} 
                     isLoading={isDataLoading} 
                 />
                  <StatCard 
                     title="Active Fields" 
-                    value={stats.totalFields} 
+                    value={stats?.totalFields ?? 0} 
                     description="Total sensor fields being monitored." 
                     icon={BarChart} 
                     isLoading={isDataLoading} 

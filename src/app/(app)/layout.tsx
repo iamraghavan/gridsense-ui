@@ -38,9 +38,13 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { getUserFromCache, saveUserToCache } from '@/lib/user-cache';
+import { getUserFromCache, saveUserToCache, clearUserFromCache } from '@/lib/user-cache';
 
 function UserMenu({ user }: { user: User }) {
+    const handleLogout = async () => {
+        clearUserFromCache();
+        await logout();
+    }
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -61,14 +65,10 @@ function UserMenu({ user }: { user: User }) {
                 Support
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <form action={logout}>
-                <button type="submit" className="w-full text-left">
-                  <DropdownMenuItem>
+               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Logout</span>
-                  </DropdownMenuItem>
-                </button>
-              </form>
+               </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     );
@@ -110,9 +110,8 @@ function LoadingSkeleton() {
 }
 
 // This is the new, robust layout for the authenticated part of the app.
-export default function AppLayout({ children, params }: { children: React.ReactNode, params: { userId: string } }) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
-  const [token, setToken] = React.useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
   const router = useRouter();
@@ -122,66 +121,36 @@ export default function AppLayout({ children, params }: { children: React.ReactN
     async function initializeSession() {
       console.log("AppLayout: Initializing session...");
       
-      // Step 1: Check for user data in URL params (from login/register)
       const userParam = searchParams.get('user');
       if (userParam) {
         try {
           const userData = JSON.parse(decodeURIComponent(userParam));
           console.log("AppLayout: Found user data in URL. Caching and setting user.", userData);
-          saveUserToCache(userData); // Cache it
+          saveUserToCache(userData);
           setUser(userData);
-          // Clean the URL
           router.replace(pathname, { scroll: false });
-          return; // Session is initialized
+          setIsLoading(false);
+          return;
         } catch (e) {
           console.error("AppLayout: Failed to parse user from URL", e);
         }
       }
 
-      // Step 2: If no URL param, try loading from cache
       const cachedUser = getUserFromCache();
       if (cachedUser) {
         console.log("AppLayout: Found user in cache.", cachedUser);
         setUser(cachedUser);
-        return; // Session is initialized
+        setIsLoading(false);
+        return;
       }
-
-      // Step 3: If no cache, fetch from the BFF as a last resort
-      console.log("AppLayout: No user in cache or URL, fetching from /api/auth/me...");
-      try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) {
-          console.error("AppLayout: Auth failed from API, logging out...");
-          await logout();
-          return;
-        }
-        const data = await res.json();
-        console.log("AppLayout: User data fetched successfully from API:", data);
-        if (data.user && data.token) {
-            setUser(data.user);
-            setToken(data.token);
-            saveUserToCache(data.user); // Cache the fresh data
-        } else {
-            console.error("AppLayout: User or token missing in API response, logging out.", data);
-            await logout();
-        }
-      } catch (error) {
-        console.error("AppLayout: Failed to fetch user from API, logging out.", error);
-        await logout();
-      }
+      
+      console.log("AppLayout: No user in cache or URL, attempting to log out.");
+      await logout();
     }
 
     initializeSession();
   }, [pathname, router, searchParams]);
   
-  React.useEffect(() => {
-    // This effect now only handles the loading state
-    if (user) {
-      console.log("AppLayout: User object is available. Finished loading.");
-      setIsLoading(false);
-    }
-  }, [user]);
-
   const navItems = React.useMemo(() => {
     if (!user?.id) return [];
     return [
@@ -191,21 +160,20 @@ export default function AppLayout({ children, params }: { children: React.ReactN
     ];
   }, [user?.id]);
   
-  if (isLoading || !user) {
+  if (isLoading) {
     return <LoadingSkeleton />;
   }
-  
-  // The token is primarily handled by the BFF now, but we get it for client-side services.
-  // We need to fetch it separately or cache it if it's not available. For simplicity,
-  // we'll fetch it here if not available, but a more robust solution might cache it too.
-  if (!token) {
-    fetch('/api/auth/me').then(res => res.json()).then(data => setToken(data.token));
+
+  if (!user) {
+    // This case should ideally not be hit if logout works correctly, but it's a safeguard.
+    return <LoadingSkeleton />;
   }
 
+  // The token is now fetched by the services themselves. We just pass the user.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // @ts-ignore
-      return React.cloneElement(child, { user, token, params });
+      return React.cloneElement(child, { user });
     }
     return child;
   });

@@ -1,6 +1,7 @@
 
 import { API_URL, API_KEY } from "@/lib/constants";
 import type { Channel, ChannelDataPoint } from "@/types";
+import { getAuthToken } from "./authService";
 
 type ChannelsResponse = {
     count: number;
@@ -9,20 +10,27 @@ type ChannelsResponse = {
 
 type CombinedChannel = Channel & { history: ChannelDataPoint[] };
 
-export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
-  // This now correctly calls the endpoint to get channels for a specific user.
+// Fetches the token from the BFF before making the actual API call.
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+    const { token } = await getAuthToken();
+    if (!token) {
+        throw new Error("Authentication token not found.");
+    }
+    
+    const headers = {
+        ...options.headers,
+        "x-api-key": API_KEY,
+        "Authorization": `Bearer ${token}`,
+    };
+    
+    console.log(`[API CALL] Making authenticated request to: ${url} with token: Bearer ${token ? '...token exists' : '...no token'}`);
+    
+    return fetch(url, { ...options, headers, cache: "no-store" });
+}
+
+export async function getChannels(userId: string): Promise<ChannelsResponse> {
   const url = `${API_URL}/channels/user/${userId}`;
-  console.log(`[API CALL] Fetching channels from: ${url}`);
-  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
-  
-  const res = await fetch(url, {
-    headers: {
-      "x-api-key": API_KEY,
-      "Authorization": `Bearer ${token}`,
-    },
-    cache: "no-store",
-  });
-  
+  const res = await fetchWithAuth(url);
   const data = await res.json();
   console.log(`[API RESPONSE] for user channels:`, data);
 
@@ -31,24 +39,12 @@ export async function getChannels(userId: string, token: string): Promise<Channe
       throw new Error(data.message || 'Failed to fetch channels');
   }
   
-  // The backend returns the channels array directly inside the response
   return data;
 }
 
-
-export async function getChannelDetails(channelId: string, token: string): Promise<CombinedChannel> {
+export async function getChannelDetails(channelId: string): Promise<CombinedChannel> {
   const url = `${API_URL}/channels/${channelId}`;
-  console.log(`[API CALL] Fetching details for channel: ${channelId} from: ${url}`);
-  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
-  
-  const res = await fetch(url, {
-    headers: {
-      "x-api-key": API_KEY,
-      "Authorization": `Bearer ${token}`,
-    },
-    cache: "no-store",
-  });
-   
+  const res = await fetchWithAuth(url);
   const data = await res.json();
   console.log(`[API RESPONSE] for channel ${channelId}:`, data);
 
@@ -63,17 +59,14 @@ export async function createChannel(channelData: {
     projectName: string;
     description: string;
     fields: { name: string; unit: string }[];
-  }, token: string): Promise<any> {
+  }): Promise<any> {
   const url = `${API_URL}/channels`;
   console.log(`[API CALL] Creating new channel at: ${url} with data:`, channelData);
-  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
   
-  const res = await fetch(url, {
+  const res = await fetchWithAuth(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify(channelData),
   });
@@ -87,18 +80,11 @@ export async function createChannel(channelData: {
   return data;
 }
 
-export async function deleteChannel(channelId: string, token: string): Promise<any> {
+export async function deleteChannel(channelId: string): Promise<any> {
     const url = `${API_URL}/channels/${channelId}`;
     console.log(`[API CALL] Deleting channel: ${channelId} at: ${url}`);
-    console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
     
-    const res = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-            "x-api-key": API_KEY,
-            "Authorization": `Bearer ${token}`
-        }
-    });
+    const res = await fetchWithAuth(url, { method: 'DELETE' });
 
     if(!res.ok) {
         try {
@@ -106,23 +92,20 @@ export async function deleteChannel(channelId: string, token: string): Promise<a
             console.error('[API RESPONSE ERROR] Delete channel error:', errorData);
             throw new Error(errorData.message || "Failed to delete channel.");
         } catch (e) {
-            // If the response has no body, use the status text
             throw new Error(res.statusText || "Failed to delete channel.");
         }
     }
     
-    // DELETE requests might not have a body, so we check for status 204 (No Content)
     if (res.status === 204) {
         console.log(`[API RESPONSE] Channel ${channelId} deleted successfully (Status 204).`);
         return { success: true };
     }
     
-    // For status 200, try to parse JSON
     try {
         const data = await res.json();
         console.log('[API RESPONSE] Delete channel response:', data);
         return data;
     } catch(e) {
-        return { success: true }; // Assume success if body is empty but status is OK
+        return { success: true };
     }
 }

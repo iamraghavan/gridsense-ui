@@ -1,5 +1,6 @@
 
 import { API_URL, API_KEY } from "@/lib/constants";
+import { getAuthToken } from "./authService";
 
 type DashboardStats = {
     totalChannels: number;
@@ -7,20 +8,28 @@ type DashboardStats = {
     totalFields: number;
 }
 
-export async function getDashboardOverview(userId: string, token: string): Promise<DashboardStats> {
-  // Corrected to use the user-specific endpoint, as required by the backend router.
+// Fetches the token from the BFF before making the actual API call.
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+    const { token } = await getAuthToken();
+    if (!token) {
+        throw new Error("Authentication token not found.");
+    }
+
+    const headers = {
+        ...options.headers,
+        "x-api-key": API_KEY,
+        "Authorization": `Bearer ${token}`,
+    };
+    
+    console.log(`[API CALL] Making authenticated request to: ${url} with token: Bearer ${token ? '...token exists' : '...no token'}`);
+
+    return fetch(url, { ...options, headers, cache: "no-store" });
+}
+
+
+export async function getDashboardOverview(userId: string): Promise<DashboardStats> {
   const url = `${API_URL}/channels/user/${userId}/stats/overview`;
-  console.log(`[API CALL] Fetching dashboard overview from: ${url}`);
-  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
-  
-  const res = await fetch(url, {
-    headers: {
-      "x-api-key": API_KEY,
-      "Authorization": `Bearer ${token}`,
-    },
-    cache: "no-store",
-  });
-  
+  const res = await fetchWithAuth(url);
   const data = await res.json();
   console.log(`[API RESPONSE] for dashboard stats overview:`, data);
 
