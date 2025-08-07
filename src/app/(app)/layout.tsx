@@ -43,7 +43,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </nav>
         {/* Mobile menu can be added here later */}
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-            <div className='ml-auto'>
+            <div className='ml-auto flex items-center gap-4'>
+                 <div className="text-right">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">Profile</p>
+                 </div>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="secondary" size="icon" className="rounded-full">

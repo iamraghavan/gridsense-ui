@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Channel, ChannelStats, User } from '@/types';
@@ -25,6 +25,23 @@ function StatCard({ title, value, isLoading }: { title: string; value: string | 
     </Card>
   );
 }
+
+function ChannelLastUpdate({ lastUpdate }: { lastUpdate?: string }) {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (lastUpdate) {
+            setFormattedDate(format(new Date(lastUpdate), 'PPpp'));
+        }
+    }, [lastUpdate]);
+
+    if (!formattedDate) {
+        return lastUpdate ? <Skeleton className="h-5 w-24" /> : <>N/A</>;
+    }
+
+    return <>{formattedDate}</>;
+}
+
 
 interface DashboardClientProps {
   user: User;
@@ -99,7 +116,7 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                                     <TableCell className="font-medium">{channel.projectName}</TableCell>
                                     <TableCell className="hidden md:table-cell text-muted-foreground">{channel.description}</TableCell>
                                     <TableCell className="hidden md:table-cell text-muted-foreground">
-                                        {channel.lastUpdate ? format(new Date(channel.lastUpdate), 'PPpp') : 'N/A'}
+                                       <ChannelLastUpdate lastUpdate={channel.lastUpdate} />
                                     </TableCell>
                                     <TableCell>
                                         {channel.latestData ? `${Object.values(channel.latestData)[0]}` : 'N/A'}
