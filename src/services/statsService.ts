@@ -9,8 +9,8 @@ type DashboardStats = {
 
 // This function now correctly calls the /api/channels/stats/overview endpoint
 // for the logged-in user. The backend identifies the user via the token.
-export async function getDashboardOverview(token: string): Promise<DashboardStats> {
-  const url = `${API_URL}/channels/stats/overview`;
+export async function getDashboardOverview(userId: string, token: string): Promise<DashboardStats> {
+  const url = `${API_URL}/channels/user/${userId}/stats/overview`;
   console.log(`Fetching dashboard overview from ${url} with token.`);
   const res = await fetch(url, {
     headers: {

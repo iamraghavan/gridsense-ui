@@ -74,14 +74,13 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!token) return;
+        if (!token || !user?.id) return;
         
         setIsLoading(true);
         try {
-            // Correctly call the APIs. User is identified by the token.
             const [channelsResponse, statsResponse] = await Promise.all([
-                getChannels(token),
-                getDashboardOverview(token)
+                getChannels(user.id, token),
+                getDashboardOverview(user.id, token)
             ]);
             
             setChannels(channelsResponse.channels);
@@ -92,7 +91,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [token]);
+    }, [user?.id, token]);
 
     useEffect(() => {
         fetchDashboardData();

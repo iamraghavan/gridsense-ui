@@ -11,8 +11,8 @@ type CombinedChannel = Channel & { history: ChannelDataPoint[] };
 
 // This function now correctly calls the /api/channels endpoint to get
 // channels for the currently authenticated user.
-export async function getChannels(token: string): Promise<ChannelsResponse> {
-  const url = `${API_URL}/channels`;
+export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
+  const url = `${API_URL}/channels/user/${userId}`;
   console.log(`Fetching channels from ${url} with token.`);
   const res = await fetch(url, {
     headers: {
