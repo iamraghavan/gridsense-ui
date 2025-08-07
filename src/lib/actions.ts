@@ -51,18 +51,16 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     });
 
     const data = await response.json();
-    // Per user request, log the full API response
     console.log("Login API Response:", data); 
 
     if (!response.ok) {
       return { message: data.message || 'Login failed. Please check your credentials.' };
     }
     
-    // Using the `user` object from the response now, as per backend structure
-    if (data.token && data.user?._id) {
-       userId = data.user._id; // Get the user ID for the redirect
+    // CORRECTED: The API returns a flat object with `_id` and `token` at the top level.
+    if (data.token && data._id) {
+       userId = data._id; // Get the user ID for the redirect
       
-      // The ONLY thing we store in cookies is the secure, httpOnly auth token.
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -75,7 +73,6 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     }
 
   } catch (error: any) {
-    // This is a specific check to allow Next.js's REDIRECT error to be thrown
      if (error.message.includes('NEXT_REDIRECT')) {
         throw error;
      }
@@ -83,11 +80,9 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     return { message: 'An unexpected error occurred.' };
   }
   
-  // Redirect MUST happen outside the try...catch block
   if(userId) {
     redirect(`/dashboard/${userId}`);
   } else {
-    // This case should ideally not be reached if the API is consistent.
     return { message: 'Login succeeded but could not get user ID for redirect.' };
   }
 }
@@ -122,8 +117,9 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       return { message: data.message || 'Registration failed.' };
     }
     
-    if (data.token && data.user?._id) {
-      userId = data.user._id;
+    // CORRECTED: The API returns a flat object with `_id` and `token`.
+    if (data.token && data._id) {
+      userId = data._id;
 
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
         httpOnly: true,
