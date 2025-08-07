@@ -116,7 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     async function initializeSession() {
       console.log("AppLayout: Initializing session...");
-      setIsLoading(true); // Ensure loading state is active
+      setIsLoading(true);
       try {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
@@ -158,9 +158,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <LoadingSkeleton />;
   }
   
+  // This is the crucial fix: Do not render children until user and token are available.
+  // This prevents the race condition where child pages try to fetch data before auth is confirmed.
   if (!user || !token) {
-    // This case should ideally not be hit if the useEffect handles logout correctly,
-    // but it's a safeguard that prevents rendering children without auth data.
     return <LoadingSkeleton />;
   }
 
