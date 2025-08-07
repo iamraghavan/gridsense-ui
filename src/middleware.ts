@@ -14,10 +14,9 @@ export function middleware(request: NextRequest) {
   const isProtectedRoute = pathname.startsWith(PROTECTED_ROUTE_PREFIX);
 
   if (token) {
-    // If user is authenticated and tries to access a public route like /login,
-    // redirect them to the generic dashboard page. The AppLayout will handle
-    // fetching the user data and rendering the correct content.
     if (isPublicRoute) {
+      // If user is authenticated and tries to access a public route like /login,
+      // redirect them to a generic dashboard path. The AppLayout will handle resolving the user ID.
       return NextResponse.redirect(new URL(PROTECTED_ROUTE_PREFIX, request.url));
     }
   } else {

@@ -138,7 +138,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         await logout();
       } finally {
         setIsLoading(false);
-        console.log("AppLayout: Finished fetching user, setting isLoading to false.");
+        console.log("AppLayout: Finished session initialization.");
       }
     }
 
@@ -154,17 +154,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ];
   }, [user?.id]);
   
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-  
-  // This is the crucial fix: Do not render children until user and token are available.
-  // This prevents the race condition where child pages try to fetch data before auth is confirmed.
-  if (!user || !token) {
+  if (isLoading || !user || !token) {
     return <LoadingSkeleton />;
   }
 
-  // This is the guaranteed safe point to render children with props.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // @ts-ignore
