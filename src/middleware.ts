@@ -26,6 +26,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
+  // Allow access to dashboard pages
+  if (pathname.startsWith('/dashboard')) {
+    return NextResponse.next();
+  }
+
+  // Redirect root channel paths to be nested under user dashboard
+  if (pathname.startsWith('/channel')) {
+      const userId = session.user?._id;
+      if (userId) {
+          const newPath = pathname.replace('/channel', `/dashboard/${userId}/channel`);
+          return NextResponse.redirect(new URL(newPath, request.url));
+      }
+  }
+
+
   return NextResponse.next();
 }
 

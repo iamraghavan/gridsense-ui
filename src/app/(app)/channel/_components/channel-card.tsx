@@ -28,7 +28,7 @@ export function ChannelCard({ channel }: ChannelCardProps) {
       </CardContent>
       <CardFooter>
         <Button asChild className="w-full">
-            <Link href={`/channel/${channel._id}`}>
+            <Link href={`/dashboard/${channel.userId}/channel/${channel.channel_id}`}>
                 View Channel
                 <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

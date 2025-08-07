@@ -82,7 +82,7 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
             </div>
             <div className="flex items-center space-x-2">
                 <Button asChild>
-                    <Link href="/channel">Manage Channels</Link>
+                    <Link href={`/dashboard/${user._id}/channel`}>Manage Channels</Link>
                 </Button>
             </div>
         </div>
@@ -134,7 +134,7 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                                     </TableCell>
                                      <TableCell className="text-right">
                                         <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/channel/${channel._id}`}>View</Link>
+                                            <Link href={`/dashboard/${channel.userId}/channel/${channel.channel_id}`}>View</Link>
                                         </Button>
                                     </TableCell>
                                 </TableRow>

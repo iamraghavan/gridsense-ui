@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href={`/dashboard/${user._id}`} className="text-foreground transition-colors hover:text-foreground whitespace-nowrap">
             Dashboard
           </Link>
-          <Link href="/channel" className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
+          <Link href={`/dashboard/${user._id}/channel`} className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
             Channels
           </Link>
           <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
