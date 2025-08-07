@@ -45,6 +45,7 @@ async function getChannelDetails(channelId: string, token: string): Promise<Comb
       },
       cache: "no-store",
     });
+     console.log(`Response for channel ${channelId}:`, await res.clone().json()); // Log the response
     if (!res.ok) {
         console.error("Failed to fetch channel details:", res.status, await res.text());
         return null;

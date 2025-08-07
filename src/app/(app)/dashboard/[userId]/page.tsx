@@ -47,6 +47,7 @@ async function getChannels(userId: string, token: string): Promise<{ count: numb
       },
       cache: "no-store",
     });
+     console.log(`Response for user ${userId} channels:`, await res.clone().json()); // Log the response
     if (!res.ok) {
         console.error("Failed to fetch channels:", res.status, await res.text());
         return { count: 0, channels: [] };
@@ -218,9 +219,9 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                               <Link href={`/channels/${channel.channel_id}`}>
-                                <DropdownMenuItem>View Details & Chart</DropdownMenuItem>
-                               </Link>
+                               <DropdownMenuItem asChild>
+                                  <Link href={`/channels/${channel.channel_id}`}>View Details & Chart</Link>
+                               </DropdownMenuItem>
                               <DropdownMenuItem disabled>Edit (soon)</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

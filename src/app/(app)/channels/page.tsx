@@ -70,6 +70,7 @@ async function getChannels(userId: string, token: string): Promise<Channel[]> {
       },
       cache: "no-store",
     });
+    console.log(`Response for user ${userId} channels:`, await res.clone().json()); // Log the response
     if (!res.ok) {
         console.error("Failed to fetch channels:", res.status, await res.text());
         return [];
@@ -292,9 +293,9 @@ function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Ch
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-destructive w-full">
+                 <button className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-destructive w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </div>
+                </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -395,9 +396,11 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/channels/${channel.channel_id}`}>
-                            <DropdownMenuItem>View Details & Chart</DropdownMenuItem>
-                          </Link>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/channels/${channel.channel_id}`} className="w-full">
+                                View Details & Chart
+                            </Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem disabled>Edit (soon)</DropdownMenuItem>
                           <DeleteChannelDialog channel={channel} token={token} onChannelDeleted={fetchChannels} />
                         </DropdownMenuContent>
