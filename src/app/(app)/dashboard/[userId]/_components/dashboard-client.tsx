@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 function StatCard({ title, value, isLoading }: { title: string; value: string | number; isLoading: boolean }) {
   return (
@@ -31,12 +32,18 @@ function ChannelLastUpdate({ lastUpdate }: { lastUpdate?: string }) {
 
     useEffect(() => {
         if (lastUpdate) {
+            // This now only runs on the client, after hydration, avoiding the mismatch.
             setFormattedDate(format(new Date(lastUpdate), 'PPpp'));
         }
     }, [lastUpdate]);
 
+    if (!lastUpdate) {
+        return <>N/A</>;
+    }
+    
+    // Show a skeleton while waiting for client-side hydration and formatting
     if (!formattedDate) {
-        return lastUpdate ? <Skeleton className="h-5 w-24" /> : <>N/A</>;
+        return <Skeleton className="h-5 w-40" />;
     }
 
     return <>{formattedDate}</>;
@@ -74,7 +81,9 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                 </p>
             </div>
             <div className="flex items-center space-x-2">
-                <Button>Manage Channels</Button>
+                <Button asChild>
+                    <Link href="/channel">Manage Channels</Link>
+                </Button>
             </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -124,7 +133,9 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                                         {channel.latestData ? `${Object.values(channel.latestData)[0]}` : 'N/A'}
                                     </TableCell>
                                      <TableCell className="text-right">
-                                        <Button variant="outline" size="sm">View</Button>
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href={`/channel/${channel._id}`}>View</Link>
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))

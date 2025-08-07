@@ -1,9 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { setSession, deleteSession } from '@/lib/auth';
-import { API_URL } from '@/lib/constants';
+import { setSession, deleteSession, getSession } from '@/lib/auth';
+import { createChannel as createChannelService } from '@/services/channelService';
 import type { LoginResponse } from '@/types';
+import { revalidatePath } from 'next/cache';
 
 export async function login(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
@@ -14,7 +15,7 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${process.env.API_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -45,4 +46,30 @@ export async function login(prevState: any, formData: FormData) {
 export async function logout() {
     await deleteSession();
     redirect('/login');
+}
+
+export async function createChannel(formData: {
+    projectName: string;
+    channel_id: string;
+    description: string;
+    fields: { name: string; unit: string }[];
+}) {
+    const session = await getSession();
+    if (!session?.token) {
+        return { error: 'You must be logged in to create a channel.' };
+    }
+
+    try {
+        const response = await createChannelService(formData, session.token);
+
+        if (response?.success) {
+            revalidatePath('/channel');
+            return { success: true };
+        } else {
+            return { error: response?.message || 'Failed to create channel.' };
+        }
+    } catch (error) {
+        console.error('Create channel action error:', error);
+        return { error: 'An unexpected server error occurred.' };
+    }
 }
