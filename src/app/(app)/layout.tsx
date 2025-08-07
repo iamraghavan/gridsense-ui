@@ -225,7 +225,8 @@ export default function AppLayout({ children, params }: { children: React.ReactN
                 <h1 className="font-semibold text-lg capitalize">{getPageTitle()}</h1>
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
-                {childrenWithProps}
+                {/* CRITICAL FIX: Only render children when user and token are confirmed to be available */}
+                {!isLoading && user && token && childrenWithProps}
             </main>
         </SidebarInset>
     </SidebarProvider>

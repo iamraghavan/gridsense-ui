@@ -74,10 +74,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.id || !token) {
-            console.log("DashboardPage: Cannot fetch data, user or token is missing.", { userId: user?.id, tokenExists: !!token });
-            return;
-        };
+        if (!user?.id || !token) return;
         
         console.log(`DashboardPage: Starting to fetch data for user ${user.id}`);
         setIsLoading(true);
@@ -101,12 +98,8 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     }, [user?.id, token]);
 
     useEffect(() => {
-        // We only fetch data if we have a user and a token.
-        // The AppLayout guarantees that these will be present.
-        if (user?.id && token) {
-            fetchDashboardData();
-        }
-    }, [user, token, fetchDashboardData]);
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     const recentChannels = channels.slice(0, 5);
     
