@@ -9,20 +9,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Copy, Eye, EyeOff, PlusCircle, Trash2 } from "lucide-react";
-import type { ApiKey, User } from "@/types";
+import type { User } from "@/types";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function ApiKeyCard({ apiKey, isLoading }: { apiKey: ApiKey | null, isLoading: boolean }) {
+function ApiKeyCard({ apiKey, isLoading }: { apiKey: string | null, isLoading: boolean }) {
     const [isVisible, setIsVisible] = useState(false);
     const { toast } = useToast();
 
     const handleCopy = () => {
         if (apiKey) {
-            navigator.clipboard.writeText(apiKey.key);
+            navigator.clipboard.writeText(apiKey);
             toast({
                 title: "Copied to clipboard!",
                 description: "The API key has been copied to your clipboard.",
@@ -65,12 +65,12 @@ function ApiKeyCard({ apiKey, isLoading }: { apiKey: ApiKey | null, isLoading: b
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{apiKey.name}</CardTitle>
-                <CardDescription>Created on {new Date(apiKey.createdAt).toLocaleDateString()}</CardDescription>
+                <CardTitle>Your API Key</CardTitle>
+                <CardDescription>Use this key for programmatic access to the API.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex items-center gap-2">
-                    <Input readOnly type={isVisible ? 'text' : 'password'} value={apiKey.key} className="font-code tracking-wider" />
+                    <Input readOnly type={isVisible ? 'text' : 'password'} value={apiKey} className="font-code tracking-wider" />
                     <Button variant="outline" size="icon" onClick={() => setIsVisible(!isVisible)}>
                         {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
@@ -91,9 +91,8 @@ function ApiKeyCard({ apiKey, isLoading }: { apiKey: ApiKey | null, isLoading: b
 }
 
 export default function ApiKeysPage() {
-  const [apiKey, setApiKey] = useState<ApiKey | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const userCookie = document.cookie
@@ -105,14 +104,6 @@ export default function ApiKeysPage() {
         try {
             const parsedUser = JSON.parse(decodeURIComponent(userCookie));
             setUser(parsedUser);
-            if (parsedUser.apiKey) {
-                 setApiKey({
-                    id: parsedUser.id, // Or a specific key ID if available
-                    name: "Your API Key",
-                    key: parsedUser.apiKey,
-                    createdAt: parsedUser.createdAt || new Date().toISOString()
-                });
-            }
         } catch (e) {
             console.error("Failed to parse user cookie:", e);
             setUser(null);
@@ -121,14 +112,13 @@ export default function ApiKeysPage() {
     setIsLoading(false);
   }, []);
 
-
   return (
     <div className="space-y-6">
         <div className="flex items-center justify-between">
             <div>
                 <h1 className="text-2xl font-bold font-headline">API Keys</h1>
                 <p className="text-muted-foreground">
-                    Your API key for programmatic access to your data.
+                    Your secret keys for programmatic access to RSensorGrid.
                 </p>
             </div>
             <div>
@@ -139,7 +129,7 @@ export default function ApiKeysPage() {
             </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-             <ApiKeyCard apiKey={apiKey} isLoading={isLoading} />
+             <ApiKeyCard apiKey={user?.apiKey ?? null} isLoading={isLoading} />
         </div>
     </div>
   );

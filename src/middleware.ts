@@ -1,20 +1,40 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { AUTH_TOKEN_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from '@/lib/constants';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get(AUTH_TOKEN_COOKIE_NAME);
+  const userCookie = request.cookies.get(USER_DETAILS_COOKIE_NAME);
   const { pathname } = request.nextUrl;
 
   const authenticatedRoutes = ['/dashboard', '/channels', '/api-keys'];
   const guestRoutes = ['/login', '/register', '/'];
 
-  if (token) {
-    // If user is authenticated and tries to access a guest route, redirect to dashboard
-    if (guestRoutes.includes(pathname)) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (token && userCookie) {
+    // If user is authenticated
+    try {
+        const user = JSON.parse(userCookie.value);
+        const userId = user.id;
+
+        // If they try to access a guest route, redirect to their dashboard
+        if (guestRoutes.includes(pathname)) {
+            return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
+        }
+        
+        // If they are on /dashboard, ensure they are on their own dashboard
+        if (pathname === '/dashboard') {
+             return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
+        }
+
+    } catch(e) {
+        // If cookie is malformed, clear it and redirect to login
+        const response = NextResponse.redirect(new URL('/login', request.url));
+        response.cookies.delete(AUTH_TOKEN_COOKIE_NAME);
+        response.cookies.delete(USER_DETAILS_COOKIE_NAME);
+        return response;
     }
+
   } else {
     // If user is not authenticated and tries to access a protected route, redirect to login
     if (authenticatedRoutes.some(route => pathname.startsWith(route))) {

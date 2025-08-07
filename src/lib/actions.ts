@@ -69,6 +69,9 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
       
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
+      
+      // Redirect to the dynamic user dashboard
+      redirect(`/dashboard/${user.id}`);
 
     } else {
        return { message: 'Login failed: No token received.' };
@@ -77,8 +80,6 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
   } catch (error) {
     return { message: 'An unexpected error occurred.' };
   }
-
-  redirect('/dashboard');
 }
 
 export async function register(prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -118,13 +119,14 @@ export async function register(prevState: AuthState, formData: FormData): Promis
         maxAge: 60 * 60 * 24 * 7, // 1 week
       };
       
-      // The API nests the user object on register, so we handle it here.
       const userData = data.user;
       const user: User = { id: userData._id, name: userData.name, email: userData.email, apiKey: userData.apiKey, createdAt: userData.createdAt };
 
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
       cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
 
+      // Redirect to the dynamic user dashboard
+      redirect(`/dashboard/${user.id}`);
     } else {
         return { message: 'Registration failed: No token or user data received.' };
     }
@@ -132,8 +134,6 @@ export async function register(prevState: AuthState, formData: FormData): Promis
   } catch (error) {
     return { message: 'An unexpected error occurred during registration.' };
   }
-  
-  redirect('/dashboard');
 }
 
 export async function logout() {

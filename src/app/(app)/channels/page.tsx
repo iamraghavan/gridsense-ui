@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, X } from "lucide-react";
+import { MoreHorizontal, PlusCircle, X, Trash2 } from "lucide-react";
 import type { Channel, User } from "@/types";
 import {
   DropdownMenu,
@@ -39,9 +39,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 async function getChannels(userId: string, token: string): Promise<Channel[]> {
   try {
@@ -57,7 +70,6 @@ async function getChannels(userId: string, token: string): Promise<Channel[]> {
         return [];
     }
     const data = await res.json();
-    // API returns { count: number, channels: [...] }, so we extract the channels array
     return Array.isArray(data.channels) ? data.channels : [];
   } catch (error) {
     console.error("Failed to fetch channels", error);
@@ -75,7 +87,7 @@ async function createChannel(channelData: {
     headers: {
       "Content-Type": "application/json",
       "x-api-key": API_KEY,
-      Authorization: `Bearer ${token}`,
+      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify(channelData),
   });
@@ -84,6 +96,21 @@ async function createChannel(channelData: {
     throw new Error(errorData.message || "Failed to create channel.");
   }
   return res.json();
+}
+
+async function deleteChannel(channelId: string, token: string): Promise<any> {
+    const res = await fetch(`${API_URL}/channels/${channelId}`, {
+        method: 'DELETE',
+        headers: {
+            "x-api-key": API_KEY,
+            "Authorization": `Bearer ${token}`
+        }
+    });
+    if(!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete channel.");
+    }
+    return res.json();
 }
 
 function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: () => void, token: string | undefined }) {
@@ -134,9 +161,8 @@ function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: ()
         title: "Channel Created!",
         description: "Your new channel has been created successfully.",
       });
-      onChannelCreated(); // Refresh the channel list
-      setOpen(false); // Close the dialog
-      // Reset form
+      onChannelCreated();
+      setOpen(false);
       setProjectName("");
       setDescription("");
       setFields([{ name: "", unit: "" }]);
@@ -237,13 +263,68 @@ function CreateChannelDialog({ onChannelCreated, token }: { onChannelCreated: ()
   );
 }
 
+function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Channel, token: string | undefined, onChannelDeleted: () => void }) {
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { toast } = useToast();
+
+    const handleDelete = async () => {
+        if (!token) {
+            toast({ variant: "destructive", title: "Authentication Error" });
+            return;
+        }
+        setIsDeleting(true);
+        try {
+            await deleteChannel(channel.channel_id, token);
+            toast({ title: "Channel Deleted", description: `The channel "${channel.projectName}" has been deleted.`});
+            onChannelDeleted();
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error deleting channel", description: error.message });
+        } finally {
+            setIsDeleting(false);
+        }
+    }
+
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-destructive w-full">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </div>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your channel
+                        <span className="font-bold"> {channel.projectName} </span>
+                        and all of its associated data from our servers.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                        {isDeleting ? "Deleting..." : "Continue"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [token, setToken] = useState<string | undefined>(undefined);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-   useEffect(() => {
+   const fetchChannels = useCallback(() => {
+    if (user?.id && token) {
+        setIsLoading(true);
+        getChannels(user.id, token).then(setChannels).finally(() => setIsLoading(false));
+    }
+   }, [user?.id, token]);
+  
+  useEffect(() => {
         const cookieValue = document.cookie
             .split('; ')
             .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
@@ -254,6 +335,7 @@ export default function ChannelsPage() {
             .split('; ')
             .find(row => row.startsWith(`${USER_DETAILS_COOKIE_NAME}=`))
             ?.split('=')[1];
+
         if (userCookie) {
             try {
                 setUser(JSON.parse(decodeURIComponent(userCookie)));
@@ -262,26 +344,16 @@ export default function ChannelsPage() {
                 setUser(null);
             }
         }
+        // If cookies are absent, loading will stay true until redirect happens
     }, []);
 
-  const fetchChannels = () => {
-    if (token && user?.id) {
-        setIsLoading(true);
-        getChannels(user.id, token).then(setChannels).finally(() => setIsLoading(false));
-    }
-  };
-
   useEffect(() => {
-     if (token && user?.id) {
+    if (user && token) {
         fetchChannels();
-    } else if (user === null || token === undefined) {
-        if (document.cookie.includes(AUTH_TOKEN_COOKIE_NAME)) {
-            // Cookies might be loading
-        } else {
-            setIsLoading(false);
-        }
+    } else {
+        setIsLoading(false); // Stop loading if no user/token
     }
-  }, [token, user]);
+  }, [user, token, fetchChannels]);
 
   return (
     <Card>
@@ -311,11 +383,15 @@ export default function ChannelsPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-                <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24">
-                        Loading channels...
-                    </TableCell>
-                </TableRow>
+                [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                    </TableRow>
+                ))
             ) : channels.length > 0 ? (
                 channels.map((channel) => (
                   <TableRow key={channel.channel_id}>
@@ -339,9 +415,11 @@ export default function ChannelsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>View Data</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                          <Link href={`/channels/${channel.channel_id}`}>
+                            <DropdownMenuItem>View Details & Chart</DropdownMenuItem>
+                          </Link>
+                          <DropdownMenuItem disabled>Edit (soon)</DropdownMenuItem>
+                          <DeleteChannelDialog channel={channel} token={token} onChannelDeleted={fetchChannels} />
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -360,5 +438,3 @@ export default function ChannelsPage() {
     </Card>
   );
 }
-
-    

@@ -28,14 +28,9 @@ export interface Channel {
   totalEntries?: number;
 }
 
-export interface ApiKey {
-  id: string;
-  name: string;
-  key: string;
-  createdAt: string;
-}
-
 export interface ChannelDataPoint {
-  date: string;
-  value: number;
+  _id: string;
+  channelId: string;
+  data: Record<string, number>;
+  createdAt: string;
 }
