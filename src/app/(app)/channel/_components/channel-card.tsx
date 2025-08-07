@@ -18,7 +18,10 @@ export function ChannelCard({ channel }: ChannelCardProps) {
         <CardTitle className="text-lg">{channel.projectName}</CardTitle>
         <CardDescription className="line-clamp-2 h-10">{channel.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className="flex-grow space-y-2">
+        <div className="text-sm text-muted-foreground">
+            ID: <span className="font-mono text-foreground">{channel.channel_id}</span>
+        </div>
         <div className="text-sm text-muted-foreground">
           <span className="font-bold text-foreground">{channel.fields.length}</span> {channel.fields.length === 1 ? 'Field' : 'Fields'}
         </div>
