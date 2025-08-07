@@ -73,12 +73,14 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [stats, setStats] = useState<Stats>({ totalChannels: 0, totalRequests: 0, totalFields: 0});
     const [isDataLoading, setIsDataLoading] = useState(true);
 
-    const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
+    const fetchDashboardData = useCallback(async () => {
+        if (!user?.id || !token) return;
+        
         setIsDataLoading(true);
         try {
             const [channelsResponse, statsResponse] = await Promise.all([
-                getChannels(userId, authToken),
-                getDashboardOverview(userId, authToken)
+                getChannels(user.id, token),
+                getDashboardOverview(user.id, token)
             ]);
             
             setChannels(channelsResponse.channels);
@@ -89,13 +91,11 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         } finally {
             setIsDataLoading(false);
         }
-    }, []);
+    }, [user?.id, token]);
 
     useEffect(() => {
-        if (user?.id && token) {
-            fetchDashboardData(user.id, token);
-        }
-    }, [user, token, fetchDashboardData]);
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     const recentChannels = channels.slice(0, 5);
     const isLoading = !user || isDataLoading;

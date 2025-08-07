@@ -10,55 +10,42 @@ type ChannelsResponse = {
 type CombinedChannel = Channel & { history: ChannelDataPoint[] };
 
 export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
-  try {
-    const res = await fetch(`${API_URL}/channels/user/${userId}`, {
-      headers: {
-        "x-api-key": API_KEY,
-        "Authorization": `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-    
-    const data = await res.json();
-    console.log(`Response for user ${userId} channels:`, data);
+  console.log(`Fetching channels for user: ${userId}`);
+  const res = await fetch(`${API_URL}/channels/user/${userId}`, {
+    headers: {
+      "x-api-key": API_KEY,
+      "Authorization": `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+  
+  const data = await res.json();
+  console.log(`Response for user ${userId} channels:`, data);
 
-    if (!res.ok) {
-        console.error("Failed to fetch channels:", res.status, data.message);
-        return { count: 0, channels: [] };
-    }
-    
-    if (data && typeof data.count === 'number' && Array.isArray(data.channels)) {
-        return data;
-    }
-
-    console.error("Unexpected API response structure for channels:", data);
-    return { count: 0, channels: [] };
-  } catch (error) {
-    console.error("Failed to fetch channels", error);
-    return { count: 0, channels: [] };
+  if (!res.ok) {
+      console.error("Failed to fetch channels:", res.status, data.message);
+      throw new Error(data.message || 'Failed to fetch channels');
   }
+  
+  return data;
 }
 
-export async function getChannelDetails(channelId: string, token: string): Promise<CombinedChannel | null> {
-  try {
-    const res = await fetch(`${API_URL}/channels/${channelId}`, {
-      headers: {
-        "x-api-key": API_KEY,
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-     const data = await res.json();
-     console.log(`Response for channel ${channelId}:`, data);
-    if (!res.ok) {
-        console.error("Failed to fetch channel details:", res.status, data.message);
-        return null;
-    }
-    return data;
-  } catch (error) {
-    console.error("Failed to fetch channel details", error);
-    return null;
+export async function getChannelDetails(channelId: string, token: string): Promise<CombinedChannel> {
+  console.log(`Fetching details for channel: ${channelId}`);
+  const res = await fetch(`${API_URL}/channels/${channelId}`, {
+    headers: {
+      "x-api-key": API_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+   const data = await res.json();
+   console.log(`Response for channel ${channelId}:`, data);
+  if (!res.ok) {
+      console.error("Failed to fetch channel details:", res.status, data.message);
+      throw new Error(data.message || 'Failed to fetch channel details');
   }
+  return data;
 }
 
 export async function createChannel(channelData: {
@@ -66,6 +53,7 @@ export async function createChannel(channelData: {
     description: string;
     fields: { name: string; unit: string }[];
   }, token: string): Promise<any> {
+  console.log('Creating new channel with data:', channelData);
   const res = await fetch(`${API_URL}/channels`, {
     method: "POST",
     headers: {
@@ -75,14 +63,18 @@ export async function createChannel(channelData: {
     },
     body: JSON.stringify(channelData),
   });
+  
+  const data = await res.json();
+  console.log('Create channel response:', data);
+
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Failed to create channel.");
+    throw new Error(data.message || "Failed to create channel.");
   }
-  return res.json();
+  return data;
 }
 
 export async function deleteChannel(channelId: string, token: string): Promise<any> {
+    console.log(`Deleting channel: ${channelId}`);
     const res = await fetch(`${API_URL}/channels/${channelId}`, {
         method: 'DELETE',
         headers: {
@@ -90,9 +82,19 @@ export async function deleteChannel(channelId: string, token: string): Promise<a
             "Authorization": `Bearer ${token}`
         }
     });
+
     if(!res.ok) {
         const errorData = await res.json();
+        console.error('Delete channel error:', errorData);
         throw new Error(errorData.message || "Failed to delete channel.");
     }
-    return res.json();
+    
+    // DELETE requests might not have a body, so we check for status 204 (No Content)
+    if (res.status === 204) {
+        return { success: true };
+    }
+    
+    const data = await res.json();
+    console.log('Delete channel response:', data);
+    return data;
 }

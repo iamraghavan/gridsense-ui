@@ -236,9 +236,9 @@ function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Ch
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                 <button className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-destructive w-full">
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </button>
+                </DropdownMenuItem>
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -267,17 +267,15 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
    const fetchChannels = useCallback(() => {
     if (user?.id && token) {
         setIsLoading(true);
-        getChannels(user.id, token).then(data => setChannels(data.channels)).finally(() => setIsLoading(false));
+        getChannels(user.id, token)
+            .then(data => setChannels(data.channels))
+            .finally(() => setIsLoading(false));
     }
    }, [user?.id, token]);
   
   useEffect(() => {
-    if (user && token) {
-        fetchChannels();
-    } else {
-        setIsLoading(false); // Stop loading if no user/token
-    }
-  }, [user, token, fetchChannels]);
+    fetchChannels();
+  }, [fetchChannels]);
 
   return (
     <Card>
@@ -313,7 +311,7 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                     </TableRow>
                 ))
             ) : channels.length > 0 ? (
