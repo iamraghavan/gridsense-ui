@@ -76,21 +76,27 @@ function UserMenu({ user }: { user: User }) {
 function LoadingSkeleton() {
     return (
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <div className="hidden border-r bg-card md:block p-4 space-y-4">
-            <div className="flex items-center gap-2">
-                 <Skeleton className="h-8 w-8" />
-                 <Skeleton className="h-6 w-32" />
-            </div>
-            <div className="mt-8 space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
+        <div className="hidden border-r bg-card md:block">
+            <div className="flex h-full max-h-screen flex-col gap-2 p-4">
+                <div className="flex h-14 items-center gap-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-6 w-32" />
+                </div>
+                <div className="mt-4 flex-1">
+                    <nav className="grid items-start gap-2 text-sm font-medium">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </nav>
+                </div>
             </div>
         </div>
         <div className="flex flex-col">
             <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
                 <Skeleton className="h-8 w-8 md:hidden" />
-                <Skeleton className="h-6 w-32" />
+                <div className="w-full flex-1">
+                    <Skeleton className="h-6 w-32" />
+                </div>
                 <Skeleton className="h-10 w-10 rounded-full" />
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
@@ -116,13 +122,19 @@ export default function AppLayout({ children, params }: { children: React.ReactN
       try {
         const res = await fetch('/api/auth/me'); // This calls the new route handler
         if (!res.ok) {
+          console.log("Auth failed, logging out...");
           await logout();
           return;
         }
         const data = await res.json();
         console.log("User data fetched successfully on client-side:", data); // Per user request
-        setUser(data.user);
-        setToken(data.token);
+        if (data.user && data.token) {
+            setUser(data.user);
+            setToken(data.token);
+        } else {
+            console.error("User or token missing in /api/auth/me response", data);
+            await logout();
+        }
       } catch (error) {
         console.error("Failed to fetch user, logging out.", error);
         await logout();

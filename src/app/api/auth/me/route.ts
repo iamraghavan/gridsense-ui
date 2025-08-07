@@ -34,11 +34,21 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
+    // Your backend for a successful login returns { user: {...}, token: ... }
+    // but the /me endpoint might just return the user object.
+    // The key is to find the user object in the response.
+    const userObject = data.user || data;
+
+    if (!userObject || !userObject._id) {
+        console.error("Malformed user data from /auth/me:", data);
+        return NextResponse.json({ error: 'Invalid user data received from API' }, { status: 500 });
+    }
+
     // On success, return the user data and the token itself so the client can use it
     // for subsequent client-side API calls.
     // The user's ID is changed from `_id` to `id` for better client-side consistency.
     const responseData = {
-        user: { ...data, id: data._id },
+        user: { ...userObject, id: userObject._id },
         token: token,
     };
 

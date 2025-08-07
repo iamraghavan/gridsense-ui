@@ -74,7 +74,10 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.id || !token) return;
+        if (!user?.id || !token) {
+            console.log("DashboardPage: Cannot fetch data, user or token is missing.", { userId: user?.id, tokenExists: !!token });
+            return;
+        };
         
         setIsLoading(true);
         try {
@@ -121,7 +124,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                 <StatCard 
                     title="Total Channels" 
                     value={stats.totalChannels} 
-                    description={`You have ${stats.totalChannels} channels in total.`} 
+                    description={`You have ${stats.totalChannels} active channels.`} 
                     icon={Rss} 
                     isLoading={isLoading} 
                 />
@@ -169,7 +172,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
                             <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                             <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-                            <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                            <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                         </TableRow>
                      ))
                   ) : recentChannels.length > 0 ? (

@@ -60,7 +60,7 @@ export async function createChannel(channelData: {
     fields: { name: string; unit: string }[];
   }, token: string): Promise<any> {
   const url = `${API_URL}/channels`;
-  console.log(`[API CALL] Creating new channel at: ${url} with data:`, channelData);
+  console.log(`[API CALL] Creating new channel at: ${url} with token: ${token} and data:`, channelData);
   
   const res = await fetch(url, {
     method: "POST",
@@ -83,7 +83,7 @@ export async function createChannel(channelData: {
 
 export async function deleteChannel(channelId: string, token: string): Promise<any> {
     const url = `${API_URL}/channels/${channelId}`;
-    console.log(`[API CALL] Deleting channel: ${channelId} at: ${url}`);
+    console.log(`[API CALL] Deleting channel: ${channelId} at: ${url} with token: ${token}`);
     
     const res = await fetch(url, {
         method: 'DELETE',
