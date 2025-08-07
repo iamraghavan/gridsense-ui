@@ -99,8 +99,8 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                     </p>
                 </div>
                 <div>
-                    <Button asChild>
-                        <Link href={`/dashboard/${user.id}/channel`}>Manage Channels <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    <Button asChild disabled={!user?.id}>
+                        <Link href={user?.id ? `/dashboard/${user.id}/channel` : '#'}>Manage Channels <ArrowRight className="ml-2 h-4 w-4" /></Link>
                     </Button>
                 </div>
             </div>
@@ -202,7 +202,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                     <TableRow>
                       <TableCell colSpan={5} className="text-center h-24">
                         No channels found.
-                        <Button variant="link" asChild><Link href={`/dashboard/${user.id}/channel`}>Create your first one!</Link></Button>
+                        <Button variant="link" asChild><Link href={user?.id ? `/dashboard/${user.id}/channel` : '#'}>Create your first one!</Link></Button>
                       </TableCell>
                     </TableRow>
                   )}
