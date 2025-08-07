@@ -73,8 +73,8 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
             <CardContent>
                 {isLoading ? (
                     <>
-                        <Skeleton className="h-8 w-1/4" />
-                        <Skeleton className="h-4 w-3/4 mt-1" />
+                        <Skeleton className="h-8 w-1/4 mt-1" />
+                        <Skeleton className="h-4 w-3/4 mt-2" />
                     </>
                 ) : (
                     <>
