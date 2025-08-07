@@ -1,4 +1,3 @@
-
 'use server';
 import { API_URL } from '@/lib/constants';
 import type { Channel } from '@/types';
@@ -69,5 +68,41 @@ export async function createChannel(
   } catch (error) {
     console.error('createChannel service error:', error);
     return { success: false, message: 'An unexpected error occurred.' };
+  }
+}
+
+
+export async function getChannelById(channelId: string, token: string): Promise<Channel | null> {
+  if (!channelId || !token) {
+    console.error('getChannelById: Missing channelId or token');
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/channels/${channelId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf',
+        'Authorization': `Bearer ${token}`,
+      },
+      cache: 'no-store', // Always fetch the latest channel data
+    });
+
+    if (!response.ok) {
+        if (response.status === 404) {
+            return null; // Handle not found gracefully
+        }
+        console.error(`Error fetching channel: ${response.status} ${response.statusText}`);
+        const errorBody = await response.text();
+        console.error("Error body:", errorBody);
+        return null;
+    }
+
+    const data: Channel = await response.json();
+    return data;
+  } catch (error) {
+    console.error('getChannelById: An unexpected error occurred:', error);
+    return null;
   }
 }
