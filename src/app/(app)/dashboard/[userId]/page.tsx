@@ -32,6 +32,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getChannels } from "@/services/channelService";
 import { getDashboardOverview } from "@/services/statsService";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardPageProps {
   user: User;
@@ -72,6 +73,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
     const [isDataLoading, setIsDataLoading] = useState(true);
+    const { toast } = useToast();
 
     const fetchDashboardData = useCallback(async () => {
         if (!user?.id || !token) {
@@ -91,13 +93,18 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             setStats(statsResponse);
             setChannels(channelsResponse.channels);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("DashboardPage: Failed to fetch dashboard data", error);
+            toast({
+              variant: "destructive",
+              title: "Failed to Load Dashboard",
+              description: error.message || "Could not fetch stats and channels. Please try again later.",
+            });
         } finally {
             console.log("DashboardPage: Finished fetching data.");
             setIsDataLoading(false);
         }
-    }, [user?.id, token]);
+    }, [user?.id, token, toast]);
 
     useEffect(() => {
         fetchDashboardData();
