@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   KeyRound,
@@ -38,6 +38,7 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
+import { getUserFromCache, saveUserToCache } from '@/lib/user-cache';
 
 function UserMenu({ user }: { user: User }) {
     return (
@@ -115,44 +116,71 @@ export default function AppLayout({ children, params }: { children: React.ReactN
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   React.useEffect(() => {
-    // Fetch user data from our secure BFF endpoint
-    async function fetchUser() {
-      console.log("AppLayout: Starting to fetch user...");
+    async function initializeSession() {
+      console.log("AppLayout: Initializing session...");
+      
+      // Step 1: Check for user data in URL params (from login/register)
+      const userParam = searchParams.get('user');
+      if (userParam) {
+        try {
+          const userData = JSON.parse(decodeURIComponent(userParam));
+          console.log("AppLayout: Found user data in URL. Caching and setting user.", userData);
+          saveUserToCache(userData); // Cache it
+          setUser(userData);
+          // Clean the URL
+          router.replace(pathname, { scroll: false });
+          return; // Session is initialized
+        } catch (e) {
+          console.error("AppLayout: Failed to parse user from URL", e);
+        }
+      }
+
+      // Step 2: If no URL param, try loading from cache
+      const cachedUser = getUserFromCache();
+      if (cachedUser) {
+        console.log("AppLayout: Found user in cache.", cachedUser);
+        setUser(cachedUser);
+        return; // Session is initialized
+      }
+
+      // Step 3: If no cache, fetch from the BFF as a last resort
+      console.log("AppLayout: No user in cache or URL, fetching from /api/auth/me...");
       try {
-        const res = await fetch('/api/auth/me'); // This calls the new route handler
+        const res = await fetch('/api/auth/me');
         if (!res.ok) {
-          console.error("AppLayout: Auth failed, logging out...");
+          console.error("AppLayout: Auth failed from API, logging out...");
           await logout();
           return;
         }
         const data = await res.json();
-        console.log("AppLayout: User data fetched successfully on client-side:", data);
+        console.log("AppLayout: User data fetched successfully from API:", data);
         if (data.user && data.token) {
             setUser(data.user);
             setToken(data.token);
-
-            // This is a crucial check. If the URL doesn't have the correct user ID,
-            // we redirect to the correct one. This handles the generic /dashboard redirect.
-            if (!pathname.includes(data.user.id)) {
-                console.log(`AppLayout: Path is wrong (${pathname}), redirecting to /dashboard/${data.user.id}`);
-                router.replace(`/dashboard/${data.user.id}`);
-            }
+            saveUserToCache(data.user); // Cache the fresh data
         } else {
-            console.error("AppLayout: User or token missing in /api/auth/me response, logging out.", data);
+            console.error("AppLayout: User or token missing in API response, logging out.", data);
             await logout();
         }
       } catch (error) {
-        console.error("AppLayout: Failed to fetch user, logging out.", error);
+        console.error("AppLayout: Failed to fetch user from API, logging out.", error);
         await logout();
-      } finally {
-        console.log("AppLayout: Finished fetching user, setting isLoading to false.");
-        setIsLoading(false);
       }
     }
-    fetchUser();
-  }, [pathname, router]);
+
+    initializeSession();
+  }, [pathname, router, searchParams]);
+  
+  React.useEffect(() => {
+    // This effect now only handles the loading state
+    if (user) {
+      console.log("AppLayout: User object is available. Finished loading.");
+      setIsLoading(false);
+    }
+  }, [user]);
 
   const navItems = React.useMemo(() => {
     if (!user?.id) return [];
@@ -162,11 +190,18 @@ export default function AppLayout({ children, params }: { children: React.ReactN
       { href: `/dashboard/${user.id}/apikey`, icon: KeyRound, label: 'API Keys', exact: false },
     ];
   }, [user?.id]);
-
-  if (isLoading || !user || !token) {
+  
+  if (isLoading || !user) {
     return <LoadingSkeleton />;
   }
   
+  // The token is primarily handled by the BFF now, but we get it for client-side services.
+  // We need to fetch it separately or cache it if it's not available. For simplicity,
+  // we'll fetch it here if not available, but a more robust solution might cache it too.
+  if (!token) {
+    fetch('/api/auth/me').then(res => res.json()).then(data => setToken(data.token));
+  }
+
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // @ts-ignore
@@ -180,7 +215,6 @@ export default function AppLayout({ children, params }: { children: React.ReactN
     const activeItem = navItems.find(item => currentPath.startsWith(item.href) && item.href !== `/dashboard/${user.id}`);
     
     if (pathname.includes('/channel/')) {
-        // Check if it's the main channel list or a specific channel
         const pathSegments = pathname.split('/');
         if (pathSegments.length > 4 && pathSegments[4] !== '') {
              return "Channel Details";
@@ -225,8 +259,7 @@ export default function AppLayout({ children, params }: { children: React.ReactN
                 <h1 className="font-semibold text-lg capitalize">{getPageTitle()}</h1>
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
-                {/* CRITICAL FIX: Only render children when user and token are confirmed to be available */}
-                {!isLoading && user && token && childrenWithProps}
+                {childrenWithProps}
             </main>
         </SidebarInset>
     </SidebarProvider>

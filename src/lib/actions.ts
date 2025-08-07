@@ -38,7 +38,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
   }
   
   const { email, password } = validatedFields.data;
-  let userId: string | undefined;
+  let user;
 
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -57,11 +57,14 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
       return { message: data.message || 'Login failed. Please check your credentials.' };
     }
     
-    // CORRECTED: The API returns a flat object with `_id` and `token` at the top level.
+    // The API returns a flat object with `_id` and `token` at the top level.
     if (data.token && data._id) {
-       userId = data._id; // Get the user ID for the redirect
+      const token = data.token;
+      // We only need the user object, the token will be in an httpOnly cookie
+      user = { ...data, id: data._id };
+      delete user.token; // Don't include token in the user object
       
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
+      cookies().set(AUTH_TOKEN_COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -80,8 +83,10 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     return { message: 'An unexpected error occurred.' };
   }
   
-  if(userId) {
-    redirect(`/dashboard/${userId}`);
+  if (user) {
+    // CRITICAL FIX: Pass user data to client for caching via search params
+    const userParam = encodeURIComponent(JSON.stringify(user));
+    redirect(`/dashboard/${user.id}?user=${userParam}`);
   } else {
     return { message: 'Login succeeded but could not get user ID for redirect.' };
   }
@@ -98,7 +103,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
   }
 
   const { name, email, password } = validatedFields.data;
-  let userId: string | undefined;
+  let user;
   
   try {
     const response = await fetch(`${API_URL}/auth/register`, {
@@ -117,11 +122,13 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       return { message: data.message || 'Registration failed.' };
     }
     
-    // CORRECTED: The API returns a flat object with `_id` and `token`.
+    // The API returns a flat object with `_id` and `token`.
     if (data.token && data._id) {
-      userId = data._id;
+       const token = data.token;
+       user = { ...data, id: data._id };
+       delete user.token;
 
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
+      cookies().set(AUTH_TOKEN_COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -140,8 +147,9 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     return { message: 'An unexpected error occurred during registration.' };
   }
   
-  if (userId) {
-    redirect(`/dashboard/${userId}`);
+  if (user) {
+    const userParam = encodeURIComponent(JSON.stringify(user));
+    redirect(`/dashboard/${user.id}?user=${userParam}`);
   } else {
     return { message: 'Registration succeeded but could not get user ID for redirect.'};
   }

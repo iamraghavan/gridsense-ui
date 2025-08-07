@@ -71,15 +71,17 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
 export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [stats, setStats] = useState<Stats>({ totalChannels: 0, totalRequests: 0, totalFields: 0});
-    const [isLoading, setIsLoading] = useState(true);
+    const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.id || !token) return;
+        if (!user?.id || !token) {
+            console.log(`DashboardPage: Cannot fetch data, user or token is missing.`, { userId: user?.id, tokenExists: !!token });
+            return;
+        }
         
         console.log(`DashboardPage: Starting to fetch data for user ${user.id}`);
-        setIsLoading(true);
+        setIsDataLoading(true);
         try {
-            // Fetch stats and channels in parallel for better performance
             const [statsResponse, channelsResponse] = await Promise.all([
                 getDashboardOverview(user.id, token),
                 getChannels(user.id, token)
@@ -90,10 +92,9 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
 
         } catch (error) {
             console.error("DashboardPage: Failed to fetch dashboard data", error);
-            // Optionally, set an error state here to show a message to the user
         } finally {
             console.log("DashboardPage: Finished fetching data.");
-            setIsLoading(false);
+            setIsDataLoading(false);
         }
     }, [user?.id, token]);
 
@@ -125,21 +126,21 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                     value={stats.totalChannels} 
                     description={`You have ${stats.totalChannels} active channels.`} 
                     icon={Rss} 
-                    isLoading={isLoading} 
+                    isLoading={isDataLoading} 
                 />
                 <StatCard 
                     title="Total Requests" 
                     value={stats.totalRequests.toLocaleString()} 
                     description="Total data points from all channels." 
                     icon={Activity} 
-                    isLoading={isLoading} 
+                    isLoading={isDataLoading} 
                 />
                  <StatCard 
                     title="Active Fields" 
                     value={stats.totalFields} 
                     description="Total sensor fields being monitored." 
                     icon={BarChart} 
-                    isLoading={isLoading} 
+                    isLoading={isDataLoading} 
                 />
             </div>
 
@@ -164,7 +165,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
+                  {isDataLoading ? (
                      [...Array(3)].map((_, i) => (
                         <TableRow key={i}>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
