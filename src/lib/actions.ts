@@ -38,7 +38,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
   }
   
   const { email, password } = validatedFields.data;
-  let user;
+  let userId;
 
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -57,12 +57,9 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
       return { message: data.message || 'Login failed. Please check your credentials.' };
     }
     
-    // The API returns a flat object with `_id` and `token` at the top level.
     if (data.token && data._id) {
       const token = data.token;
-      // We only need the user object, the token will be in an httpOnly cookie
-      user = { ...data, id: data._id };
-      delete user.token; // Don't include token in the user object
+      userId = data._id;
       
       cookies().set(AUTH_TOKEN_COOKIE_NAME, token, {
         httpOnly: true,
@@ -83,10 +80,8 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     return { message: 'An unexpected error occurred.' };
   }
   
-  if (user) {
-    // CRITICAL FIX: Pass user data to client for caching via search params
-    const userParam = encodeURIComponent(JSON.stringify(user));
-    redirect(`/dashboard/${user.id}?user=${userParam}`);
+  if (userId) {
+    redirect(`/dashboard/${userId}`);
   } else {
     return { message: 'Login succeeded but could not get user ID for redirect.' };
   }
@@ -103,7 +98,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
   }
 
   const { name, email, password } = validatedFields.data;
-  let user;
+  let userId;
   
   try {
     const response = await fetch(`${API_URL}/auth/register`, {
@@ -122,11 +117,9 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       return { message: data.message || 'Registration failed.' };
     }
     
-    // The API returns a flat object with `_id` and `token`.
     if (data.token && data._id) {
        const token = data.token;
-       user = { ...data, id: data._id };
-       delete user.token;
+       userId = data._id;
 
       cookies().set(AUTH_TOKEN_COOKIE_NAME, token, {
         httpOnly: true,
@@ -147,9 +140,8 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     return { message: 'An unexpected error occurred during registration.' };
   }
   
-  if (user) {
-    const userParam = encodeURIComponent(JSON.stringify(user));
-    redirect(`/dashboard/${user.id}?user=${userParam}`);
+  if (userId) {
+    redirect(`/dashboard/${userId}`);
   } else {
     return { message: 'Registration succeeded but could not get user ID for redirect.'};
   }

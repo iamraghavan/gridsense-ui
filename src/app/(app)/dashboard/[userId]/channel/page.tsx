@@ -59,9 +59,10 @@ import { getChannels, createChannel, deleteChannel } from "@/services/channelSer
 
 interface ChannelsPageProps {
   user: User; // Injected by AppLayout
+  token: string; // Injected by AppLayout
 }
 
-function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => void }) {
+function CreateChannelDialog({ token, onChannelCreated }: { token: string, onChannelCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
@@ -100,7 +101,7 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
         return;
       }
 
-      await createChannel({ projectName, description, fields: filteredFields });
+      await createChannel({ projectName, description, fields: filteredFields }, token);
       toast({
         title: "Channel Created!",
         description: "Your new channel has been created successfully.",
@@ -207,14 +208,14 @@ function CreateChannelDialog({ onChannelCreated }: { onChannelCreated: () => voi
   );
 }
 
-function DeleteChannelDialog({ channel, onChannelDeleted }: { channel: Channel, onChannelDeleted: () => void }) {
+function DeleteChannelDialog({ channel, token, onChannelDeleted }: { channel: Channel, token: string, onChannelDeleted: () => void }) {
     const [isDeleting, setIsDeleting] = useState(false);
     const { toast } = useToast();
 
     const handleDelete = async () => {
         setIsDeleting(true);
         try {
-            await deleteChannel(channel.channel_id);
+            await deleteChannel(channel.channel_id, token);
             toast({ title: "Channel Deleted", description: `The channel "${channel.projectName}" has been deleted.`});
             onChannelDeleted();
         } catch (error: any) {
@@ -251,19 +252,19 @@ function DeleteChannelDialog({ channel, onChannelDeleted }: { channel: Channel, 
     );
 }
 
-export default function ChannelsPage({ user }: ChannelsPageProps) {
+export default function ChannelsPage({ user, token }: ChannelsPageProps) {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
    const fetchChannels = useCallback(() => {
-    if (user.id) {
+    if (user?.id && token) {
         setIsLoading(true);
-        getChannels(user.id)
+        getChannels(user.id, token)
             .then(data => setChannels(data.channels))
             .catch(error => console.error("Failed to fetch channels", error))
             .finally(() => setIsLoading(false));
     }
-   }, [user.id]);
+   }, [user?.id, token]);
   
   useEffect(() => {
     fetchChannels();
@@ -279,7 +280,7 @@ export default function ChannelsPage({ user }: ChannelsPageProps) {
           </CardDescription>
         </div>
         <div>
-            <CreateChannelDialog onChannelCreated={fetchChannels} />
+            <CreateChannelDialog token={token} onChannelCreated={fetchChannels} />
         </div>
       </CardHeader>
       <CardContent>
@@ -335,7 +336,7 @@ export default function ChannelsPage({ user }: ChannelsPageProps) {
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem disabled>Edit (soon)</DropdownMenuItem>
-                          <DeleteChannelDialog channel={channel} onChannelDeleted={fetchChannels} />
+                          <DeleteChannelDialog channel={channel} token={token} onChannelDeleted={fetchChannels} />
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

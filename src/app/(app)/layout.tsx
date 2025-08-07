@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   KeyRound,
@@ -38,11 +38,9 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { clearUserFromCache } from '@/lib/user-cache';
 
 function UserMenu({ user }: { user: User }) {
     const handleLogout = async () => {
-        clearUserFromCache();
         await logout();
     }
     return (
@@ -118,7 +116,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     async function initializeSession() {
       console.log("AppLayout: Initializing session...");
-      
       try {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
@@ -140,7 +137,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         await logout();
       } finally {
         setIsLoading(false);
-         console.log("AppLayout: Finished fetching user, setting isLoading to false.");
+        console.log("AppLayout: Finished fetching user, setting isLoading to false.");
       }
     }
 
@@ -156,20 +153,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ];
   }, [user?.id]);
   
-  // This is the critical change. We GUARANTEE that user and token are available
-  // before we attempt to render the children. We show a skeleton while loading.
   if (isLoading) {
     return <LoadingSkeleton />;
   }
   
-  // If loading is finished, but we still don't have a user, it's an error state.
-  // The useEffect will have already initiated a logout, but we can show a loader
-  // to prevent rendering a broken UI.
   if (!user || !token) {
+    // This case should ideally not be hit if the useEffect handles logout correctly,
+    // but it's a safeguard.
     return <LoadingSkeleton />;
   }
 
-  // The token is now fetched by the services themselves. We just pass the user.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // @ts-ignore
