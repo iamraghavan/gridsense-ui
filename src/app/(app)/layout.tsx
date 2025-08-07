@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   Settings,
   LifeBuoy,
+  Book,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,25 +38,52 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const USER_CACHE_KEY = 'rsg_user';
 const TOKEN_CACHE_KEY = 'rsg_token';
 
 function UserMenu({ user, onLogout }: { user: User, onLogout: () => void }) {
+    const getInitials = (name: string) => {
+        const names = name.split(' ');
+        if (names.length > 1) {
+            return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    }
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <UserIcon className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
+              <Button variant="ghost" className="h-10 w-10 rounded-full">
+                <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                        {getInitials(user.name)}
+                    </AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user.name || 'My Account'}</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
+               <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href={`/dashboard/${user.id}/apikey`}>
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                    </Link>
+                </DropdownMenuItem>
               <DropdownMenuItem disabled>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                <Book className="mr-2 h-4 w-4" />
+                Docs
               </DropdownMenuItem>
               <DropdownMenuItem disabled>
                 <LifeBuoy className="mr-2 h-4 w-4" />
@@ -162,18 +190,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ];
   }, [user?.id]);
   
-  if (isLoading || !user || !token) {
+  if (isLoading) {
     return <LoadingSkeleton />;
   }
-
-  // Pass user and token to all children
-  const childrenWithProps = React.Children.map(children, child => {
-    if (React.isValidElement(child)) {
-      // @ts-ignore
-      return React.cloneElement(child, { user, token });
-    }
-    return child;
-  });
   
   const getPageTitle = () => {
     const currentPath = pathname.split('?')[0];
@@ -186,11 +205,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return activeItem?.label || 'Dashboard';
   }
 
+  const childrenWithProps = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+        // @ts-ignore
+      return React.cloneElement(child, { user, token });
+    }
+    return child;
+  });
+
   return (
     <SidebarProvider>
         <Sidebar>
             <SidebarHeader>
-                 <Link href={`/dashboard/${user.id}`}>
+                 <Link href={user ? `/dashboard/${user.id}`: '#'}>
                     <Logo />
                 </Link>
             </SidebarHeader>
@@ -212,16 +239,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenu>
             </SidebarContent>
              <SidebarFooter>
-                <UserMenu user={user} onLogout={handleLogout} />
+                {/* This space is intentionally left blank for the user menu in the header */}
             </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-            <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-                <SidebarTrigger />
-                <h1 className="font-semibold text-lg capitalize">{getPageTitle()}</h1>
+            <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+                <div className="flex items-center gap-4">
+                    <SidebarTrigger className="md:hidden" />
+                    <h1 className="font-semibold text-lg capitalize">{getPageTitle()}</h1>
+                </div>
+                {user && <UserMenu user={user} onLogout={handleLogout} />}
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-secondary/40">
-                {childrenWithProps}
+                {user && token ? childrenWithProps : <p>Loading...</p>}
             </main>
         </SidebarInset>
     </SidebarProvider>
