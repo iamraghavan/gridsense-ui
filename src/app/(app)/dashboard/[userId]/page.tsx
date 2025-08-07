@@ -74,20 +74,22 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!token || !user?.id) return;
+        if (!user?.id || !token) return;
         
         setIsLoading(true);
         try {
-            const [channelsResponse, statsResponse] = await Promise.all([
-                getChannels(user.id, token),
-                getDashboardOverview(user.id, token)
+            // Fetch stats and channels in parallel for better performance
+            const [statsResponse, channelsResponse] = await Promise.all([
+                getDashboardOverview(user.id, token),
+                getChannels(user.id, token)
             ]);
             
-            setChannels(channelsResponse.channels);
             setStats(statsResponse);
+            setChannels(channelsResponse.channels);
 
         } catch (error) {
             console.error("Failed to fetch dashboard data", error);
+            // Optionally, set an error state here to show a message to the user
         } finally {
             setIsLoading(false);
         }
