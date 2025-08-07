@@ -93,7 +93,6 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
 
         } catch (error) {
             console.error("DashboardPage: Failed to fetch dashboard data", error);
-            // Optionally set an error state here to show in the UI
         } finally {
             console.log("DashboardPage: Finished fetching data.");
             setIsDataLoading(false);

@@ -109,13 +109,11 @@ function LoadingSkeleton() {
     );
 }
 
-// This is the new, robust layout for the authenticated part of the app.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
-  const router = useRouter();
 
   React.useEffect(() => {
     async function initializeSession() {
@@ -158,15 +156,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ];
   }, [user?.id]);
   
+  // This is the critical change. We GUARANTEE that user and token are available
+  // before we attempt to render the children. We show a skeleton while loading.
   if (isLoading) {
     return <LoadingSkeleton />;
   }
   
-  // This is the critical change. We GUARANTEE that user and token are available
-  // before we attempt to render the children.
+  // If loading is finished, but we still don't have a user, it's an error state.
+  // The useEffect will have already initiated a logout, but we can show a loader
+  // to prevent rendering a broken UI.
   if (!user || !token) {
-    // This state should ideally trigger a redirect to /login, but for now, a skeleton is a safe fallback.
-    // The initializeSession() effect will handle the logout() if the fetch fails.
     return <LoadingSkeleton />;
   }
 
