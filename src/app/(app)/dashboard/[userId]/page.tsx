@@ -31,10 +31,17 @@ import {
 import { useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getChannels } from "@/services/channelService";
+import { getDashboardOverview } from "@/services/statsService";
 
 interface DashboardPageProps {
   user: User; // Injected by AppLayout
   token: string; // Injected by AppLayout
+}
+
+type Stats = {
+    totalChannels: number;
+    totalRequests: number;
+    totalFields: number;
 }
 
 function StatCard({ title, value, description, icon: Icon, isLoading }: { title: string, value: string | number, description: string, icon: React.ElementType, isLoading: boolean }) {
@@ -63,15 +70,20 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
 
 export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
-    const [channelCount, setChannelCount] = useState(0);
+    const [stats, setStats] = useState<Stats>({ totalChannels: 0, totalRequests: 0, totalFields: 0});
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
         setIsDataLoading(true);
         try {
-            const { count, channels: fetchedChannels } = await getChannels(userId, authToken);
-            setChannels(fetchedChannels);
-            setChannelCount(count);
+            const [channelsResponse, statsResponse] = await Promise.all([
+                getChannels(userId, authToken),
+                getDashboardOverview(userId, authToken)
+            ]);
+            
+            setChannels(channelsResponse.channels);
+            setStats(statsResponse);
+
         } catch (error) {
             console.error("Failed to fetch dashboard data", error);
         } finally {
@@ -85,7 +97,6 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         }
     }, [user, token, fetchDashboardData]);
 
-    const totalRequests = channels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
     const recentChannels = channels.slice(0, 5);
     const isLoading = !user || isDataLoading;
 
@@ -108,21 +119,21 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard 
                     title="Total Channels" 
-                    value={isLoading ? '...' : channelCount} 
-                    description={`You have ${channelCount} channels in total.`} 
+                    value={isLoading ? '...' : stats.totalChannels} 
+                    description={`You have ${stats.totalChannels} channels in total.`} 
                     icon={Rss} 
                     isLoading={isLoading} 
                 />
                 <StatCard 
                     title="Total Requests" 
-                    value={isLoading ? '...' : totalRequests.toLocaleString()} 
+                    value={isLoading ? '...' : stats.totalRequests.toLocaleString()} 
                     description="Total data points from all channels." 
                     icon={Activity} 
                     isLoading={isLoading} 
                 />
                  <StatCard 
                     title="Active Fields" 
-                    value={isLoading ? '...' : channels.reduce((acc, c) => acc + c.fields.length, 0)} 
+                    value={isLoading ? '...' : stats.totalFields} 
                     description="Total sensor fields being monitored." 
                     icon={BarChart} 
                     isLoading={isLoading} 
