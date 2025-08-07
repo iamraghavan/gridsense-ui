@@ -10,8 +10,9 @@ type ChannelsResponse = {
 type CombinedChannel = Channel & { history: ChannelDataPoint[] };
 
 export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
-  console.log(`Fetching channels for user: ${userId}`);
-  const res = await fetch(`${API_URL}/channels/user/${userId}`, {
+  const url = `${API_URL}/channels/user/${userId}`;
+  console.log(`Fetching channels for user: ${userId} from ${url}`);
+  const res = await fetch(url, {
     headers: {
       "x-api-key": API_KEY,
       "Authorization": `Bearer ${token}`,
@@ -31,8 +32,9 @@ export async function getChannels(userId: string, token: string): Promise<Channe
 }
 
 export async function getChannelDetails(channelId: string, token: string): Promise<CombinedChannel> {
-  console.log(`Fetching details for channel: ${channelId}`);
-  const res = await fetch(`${API_URL}/channels/${channelId}`, {
+  const url = `${API_URL}/channels/${channelId}`;
+  console.log(`Fetching details for channel: ${channelId} from ${url}`);
+  const res = await fetch(url, {
     headers: {
       "x-api-key": API_KEY,
       Authorization: `Bearer ${token}`,
@@ -53,8 +55,9 @@ export async function createChannel(channelData: {
     description: string;
     fields: { name: string; unit: string }[];
   }, token: string): Promise<any> {
-  console.log('Creating new channel with data:', channelData);
-  const res = await fetch(`${API_URL}/channels`, {
+  const url = `${API_URL}/channels`;
+  console.log('Creating new channel with data:', channelData, `at ${url}`);
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -74,8 +77,9 @@ export async function createChannel(channelData: {
 }
 
 export async function deleteChannel(channelId: string, token: string): Promise<any> {
-    console.log(`Deleting channel: ${channelId}`);
-    const res = await fetch(`${API_URL}/channels/${channelId}`, {
+    const url = `${API_URL}/channels/${channelId}`;
+    console.log(`Deleting channel: ${channelId} at ${url}`);
+    const res = await fetch(url, {
         method: 'DELETE',
         headers: {
             "x-api-key": API_KEY,
