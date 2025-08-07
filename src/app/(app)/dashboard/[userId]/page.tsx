@@ -183,6 +183,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                             {channel.latestData ? (
                                 Object.entries(channel.latestData).map(([key, value]) => (
                                     <Badge key={key} variant="outline" className="font-code">{`${key}: ${value}`}</Badge>
+
                                 ))
                             ) : (
                                 <span className="text-muted-foreground text-xs">No data yet</span>
