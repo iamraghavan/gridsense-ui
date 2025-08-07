@@ -4,10 +4,8 @@ import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import React from 'react';
 import Link from 'next/link';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
+import { UserNav } from './_components/user-nav';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -17,7 +15,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   
   const user = session.user;
-  const userInitials = user.name.split(' ').map(n => n[0]).join('');
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -43,30 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Mobile menu can be added here later */}
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
             <div className='ml-auto flex items-center gap-4'>
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-auto gap-2 p-1 rounded-full flex items-center">
-                        <Avatar>
-                            <AvatarImage src={`https://placehold.co/100x100.png`} alt={user.name} />
-                            <AvatarFallback>{userInitials}</AvatarFallback>
-                        </Avatar>
-                        <div className="text-left">
-                           <p className="text-sm font-medium">{user.name}</p>
-                           <p className="text-xs text-muted-foreground">{user.email}</p>
-                        </div>
-                        <span className="sr-only">Toggle user menu</span>
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
-                    <DropdownMenuItem>API Settings</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Logout</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                 <UserNav user={user} />
             </div>
         </div>
       </header>
