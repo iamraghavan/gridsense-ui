@@ -27,20 +27,19 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       // Forward the error from the backend API
-      console.error("Backend API error on /auth/me:", data);
+      console.error("BFF: Backend API error on /auth/me:", data);
       // Clear the invalid cookie
       const response = NextResponse.json({ error: data.message || 'Failed to fetch user' }, { status: res.status });
       response.cookies.delete(AUTH_TOKEN_COOKIE_NAME);
       return response;
     }
 
-    // Your backend for a successful login returns { user: {...}, token: ... }
-    // but the /me endpoint might just return the user object.
-    // The key is to find the user object in the response.
+    // Your backend for a successful login/register returns { user: {...}, ... }
+    // The /me endpoint also returns the user object directly.
     const userObject = data.user || data;
 
     if (!userObject || !userObject._id) {
-        console.error("Malformed user data from /auth/me:", data);
+        console.error("BFF: Malformed user data from /auth/me:", data);
         return NextResponse.json({ error: 'Invalid user data received from API' }, { status: 500 });
     }
 
@@ -51,7 +50,8 @@ export async function GET(request: NextRequest) {
         user: { ...userObject, id: userObject._id },
         token: token,
     };
-
+    
+    console.log("BFF: Successfully fetched user, returning to client:", responseData.user.id);
     return NextResponse.json(responseData);
 
   } catch (error) {

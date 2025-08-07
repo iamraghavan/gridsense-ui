@@ -10,8 +10,10 @@ type ChannelsResponse = {
 type CombinedChannel = Channel & { history: ChannelDataPoint[] };
 
 export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
+  // This now correctly calls the endpoint to get channels for a specific user.
   const url = `${API_URL}/channels/user/${userId}`;
-  console.log(`[API CALL] Fetching channels from: ${url} with token: ${token}`);
+  console.log(`[API CALL] Fetching channels from: ${url}`);
+  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
   
   const res = await fetch(url, {
     headers: {
@@ -29,12 +31,15 @@ export async function getChannels(userId: string, token: string): Promise<Channe
       throw new Error(data.message || 'Failed to fetch channels');
   }
   
+  // The backend returns the channels array directly inside the response
   return data;
 }
 
+
 export async function getChannelDetails(channelId: string, token: string): Promise<CombinedChannel> {
   const url = `${API_URL}/channels/${channelId}`;
-  console.log(`[API CALL] Fetching details for channel: ${channelId} from: ${url} with token: ${token}`);
+  console.log(`[API CALL] Fetching details for channel: ${channelId} from: ${url}`);
+  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
   
   const res = await fetch(url, {
     headers: {
@@ -60,7 +65,8 @@ export async function createChannel(channelData: {
     fields: { name: string; unit: string }[];
   }, token: string): Promise<any> {
   const url = `${API_URL}/channels`;
-  console.log(`[API CALL] Creating new channel at: ${url} with token: ${token} and data:`, channelData);
+  console.log(`[API CALL] Creating new channel at: ${url} with data:`, channelData);
+  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
   
   const res = await fetch(url, {
     method: "POST",
@@ -83,7 +89,8 @@ export async function createChannel(channelData: {
 
 export async function deleteChannel(channelId: string, token: string): Promise<any> {
     const url = `${API_URL}/channels/${channelId}`;
-    console.log(`[API CALL] Deleting channel: ${channelId} at: ${url} with token: ${token}`);
+    console.log(`[API CALL] Deleting channel: ${channelId} at: ${url}`);
+    console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
     
     const res = await fetch(url, {
         method: 'DELETE',

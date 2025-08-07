@@ -8,8 +8,10 @@ type DashboardStats = {
 }
 
 export async function getDashboardOverview(userId: string, token: string): Promise<DashboardStats> {
+  // Corrected to use the user-specific endpoint, as required by the backend router.
   const url = `${API_URL}/channels/user/${userId}/stats/overview`;
-  console.log(`[API CALL] Fetching dashboard overview from: ${url} with token: ${token}`);
+  console.log(`[API CALL] Fetching dashboard overview from: ${url}`);
+  console.log(`[API CALL] Using token: Bearer ${token ? '...token exists' : '...no token'}`);
   
   const res = await fetch(url, {
     headers: {

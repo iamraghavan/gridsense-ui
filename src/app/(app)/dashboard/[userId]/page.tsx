@@ -79,6 +79,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             return;
         };
         
+        console.log(`DashboardPage: Starting to fetch data for user ${user.id}`);
         setIsLoading(true);
         try {
             // Fetch stats and channels in parallel for better performance
@@ -91,16 +92,21 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             setChannels(channelsResponse.channels);
 
         } catch (error) {
-            console.error("Failed to fetch dashboard data", error);
+            console.error("DashboardPage: Failed to fetch dashboard data", error);
             // Optionally, set an error state here to show a message to the user
         } finally {
+            console.log("DashboardPage: Finished fetching data.");
             setIsLoading(false);
         }
     }, [user?.id, token]);
 
     useEffect(() => {
-        fetchDashboardData();
-    }, [fetchDashboardData]);
+        // We only fetch data if we have a user and a token.
+        // The AppLayout guarantees that these will be present.
+        if (user?.id && token) {
+            fetchDashboardData();
+        }
+    }, [user, token, fetchDashboardData]);
 
     const recentChannels = channels.slice(0, 5);
     

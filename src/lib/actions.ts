@@ -58,8 +58,9 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
       return { message: data.message || 'Login failed. Please check your credentials.' };
     }
     
-    if (data.token && data._id) {
-       userId = data._id; // Get the user ID for the redirect
+    // Using the `user` object from the response now, as per backend structure
+    if (data.token && data.user?._id) {
+       userId = data.user._id; // Get the user ID for the redirect
       
       // The ONLY thing we store in cookies is the secure, httpOnly auth token.
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
@@ -83,7 +84,12 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
   }
   
   // Redirect MUST happen outside the try...catch block
-  redirect(`/dashboard/${userId}`);
+  if(userId) {
+    redirect(`/dashboard/${userId}`);
+  } else {
+    // This case should ideally not be reached if the API is consistent.
+    return { message: 'Login succeeded but could not get user ID for redirect.' };
+  }
 }
 
 export async function register(prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -137,8 +143,12 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     console.error('Registration error:', error);
     return { message: 'An unexpected error occurred during registration.' };
   }
-
-  redirect(`/dashboard/${userId}`);
+  
+  if (userId) {
+    redirect(`/dashboard/${userId}`);
+  } else {
+    return { message: 'Registration succeeded but could not get user ID for redirect.'};
+  }
 }
 
 export async function logout() {

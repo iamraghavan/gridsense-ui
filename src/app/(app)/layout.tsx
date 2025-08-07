@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   KeyRound,
@@ -114,36 +114,45 @@ export default function AppLayout({ children, params }: { children: React.ReactN
   const [token, setToken] = React.useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
+  const router = useRouter();
 
   React.useEffect(() => {
     // Fetch user data from our secure BFF endpoint
     async function fetchUser() {
-      setIsLoading(true);
+      console.log("AppLayout: Starting to fetch user...");
       try {
         const res = await fetch('/api/auth/me'); // This calls the new route handler
         if (!res.ok) {
-          console.log("Auth failed, logging out...");
+          console.error("AppLayout: Auth failed, logging out...");
           await logout();
           return;
         }
         const data = await res.json();
-        console.log("User data fetched successfully on client-side:", data); // Per user request
+        console.log("AppLayout: User data fetched successfully on client-side:", data);
         if (data.user && data.token) {
             setUser(data.user);
             setToken(data.token);
+
+            // This is a crucial check. If the URL doesn't have the correct user ID,
+            // we redirect to the correct one. This handles the generic /dashboard redirect.
+            if (!pathname.includes(data.user.id)) {
+                console.log(`AppLayout: Path is wrong (${pathname}), redirecting to /dashboard/${data.user.id}`);
+                router.replace(`/dashboard/${data.user.id}`);
+            }
         } else {
-            console.error("User or token missing in /api/auth/me response", data);
+            console.error("AppLayout: User or token missing in /api/auth/me response, logging out.", data);
             await logout();
         }
       } catch (error) {
-        console.error("Failed to fetch user, logging out.", error);
+        console.error("AppLayout: Failed to fetch user, logging out.", error);
         await logout();
       } finally {
+        console.log("AppLayout: Finished fetching user, setting isLoading to false.");
         setIsLoading(false);
       }
     }
     fetchUser();
-  }, []);
+  }, [pathname, router]);
 
   const navItems = React.useMemo(() => {
     if (!user?.id) return [];
@@ -168,9 +177,15 @@ export default function AppLayout({ children, params }: { children: React.ReactN
   
   const getPageTitle = () => {
     const currentPath = pathname.split('?')[0];
-    const activeItem = navItems.find(item => currentPath.startsWith(item.href));
+    const activeItem = navItems.find(item => currentPath.startsWith(item.href) && item.href !== `/dashboard/${user.id}`);
+    
     if (pathname.includes('/channel/')) {
-        return "Channel Details";
+        // Check if it's the main channel list or a specific channel
+        const pathSegments = pathname.split('/');
+        if (pathSegments.length > 4 && pathSegments[4] !== '') {
+             return "Channel Details";
+        }
+       return "Channels";
     }
     return activeItem?.label || 'Dashboard';
   }
