@@ -18,15 +18,19 @@ export async function getChannels(userId: string, token: string): Promise<Channe
       },
       cache: "no-store",
     });
-    console.log(`Response for user ${userId} channels:`, await res.clone().json());
+    
+    const data = await res.json();
+    console.log(`Response for user ${userId} channels:`, data);
+
     if (!res.ok) {
-        console.error("Failed to fetch channels:", res.status, await res.text());
+        console.error("Failed to fetch channels:", res.status, data.message);
         return { count: 0, channels: [] };
     }
-    const data = await res.json();
+    
     if (data && typeof data.count === 'number' && Array.isArray(data.channels)) {
         return data;
     }
+
     console.error("Unexpected API response structure for channels:", data);
     return { count: 0, channels: [] };
   } catch (error) {
@@ -44,12 +48,13 @@ export async function getChannelDetails(channelId: string, token: string): Promi
       },
       cache: "no-store",
     });
-     console.log(`Response for channel ${channelId}:`, await res.clone().json());
+     const data = await res.json();
+     console.log(`Response for channel ${channelId}:`, data);
     if (!res.ok) {
-        console.error("Failed to fetch channel details:", res.status, await res.text());
+        console.error("Failed to fetch channel details:", res.status, data.message);
         return null;
     }
-    return res.json();
+    return data;
   } catch (error) {
     console.error("Failed to fetch channel details", error);
     return null;
