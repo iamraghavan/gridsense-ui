@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getSession } from '@/lib/auth';
@@ -21,22 +22,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
+      <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-card px-4 shadow-sm md:px-6 z-50">
         <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link href={`/dashboard/${user._id}`} className="flex items-center gap-2 text-lg font-semibold md:text-base">
             <Logo className="h-6 w-6" />
             <span className="sr-only">RSensorGrid</span>
           </Link>
-          <Link href={`/dashboard/${user._id}`} className="text-foreground transition-colors hover:text-foreground">
+          <Link href={`/dashboard/${user._id}`} className="text-foreground transition-colors hover:text-foreground whitespace-nowrap">
             Dashboard
           </Link>
-          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
             Channels
           </Link>
-          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
             API Docs
           </Link>
-          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
+          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
             Support
           </Link>
         </nav>
