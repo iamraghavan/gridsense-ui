@@ -9,9 +9,11 @@ type ChannelsResponse = {
 
 type CombinedChannel = Channel & { history: ChannelDataPoint[] };
 
-export async function getChannels(userId: string, token: string): Promise<ChannelsResponse> {
-  const url = `${API_URL}/channels/user/${userId}`;
-  console.log(`Fetching channels for user: ${userId} from ${url} with token.`);
+// This function now correctly calls the /api/channels endpoint to get
+// channels for the currently authenticated user.
+export async function getChannels(token: string): Promise<ChannelsResponse> {
+  const url = `${API_URL}/channels`;
+  console.log(`Fetching channels from ${url} with token.`);
   const res = await fetch(url, {
     headers: {
       "x-api-key": API_KEY,
@@ -21,7 +23,7 @@ export async function getChannels(userId: string, token: string): Promise<Channe
   });
   
   const data = await res.json();
-  console.log(`Response for user ${userId} channels:`, data);
+  console.log(`Response for user channels:`, data);
 
   if (!res.ok) {
       console.error("Failed to fetch channels:", res.status, data.message);
@@ -88,17 +90,27 @@ export async function deleteChannel(channelId: string, token: string): Promise<a
     });
 
     if(!res.ok) {
-        const errorData = await res.json();
-        console.error('Delete channel error:', errorData);
-        throw new Error(errorData.message || "Failed to delete channel.");
+        try {
+            const errorData = await res.json();
+            console.error('Delete channel error:', errorData);
+            throw new Error(errorData.message || "Failed to delete channel.");
+        } catch (e) {
+            // If the response has no body, use the status text
+            throw new Error(res.statusText || "Failed to delete channel.");
+        }
     }
     
     // DELETE requests might not have a body, so we check for status 204 (No Content)
-    if (res.status === 204 || res.status === 200) {
+    if (res.status === 204) {
         return { success: true };
     }
     
-    const data = await res.json();
-    console.log('Delete channel response:', data);
-    return data;
+    // For status 200, try to parse JSON
+    try {
+        const data = await res.json();
+        console.log('Delete channel response:', data);
+        return data;
+    } catch(e) {
+        return { success: true }; // Assume success if body is empty but status is OK
+    }
 }

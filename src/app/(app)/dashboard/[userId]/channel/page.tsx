@@ -265,13 +265,14 @@ export default function ChannelsPage({ user, token }: ChannelsPageProps) {
   const [isLoading, setIsLoading] = useState(true);
 
    const fetchChannels = useCallback(() => {
-    if (user?.id && token) {
+    if (token) {
         setIsLoading(true);
-        getChannels(user.id, token)
+        getChannels(token)
             .then(data => setChannels(data.channels))
+            .catch(error => console.error("Failed to fetch channels", error))
             .finally(() => setIsLoading(false));
     }
-   }, [user?.id, token]);
+   }, [token]);
   
   useEffect(() => {
     fetchChannels();

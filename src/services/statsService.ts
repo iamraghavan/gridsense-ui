@@ -7,9 +7,11 @@ type DashboardStats = {
     totalFields: number;
 }
 
-export async function getDashboardOverview(userId: string, token: string): Promise<DashboardStats> {
-  const url = `${API_URL}/channels/user/${userId}/stats/overview`;
-  console.log(`Fetching dashboard overview for user: ${userId} from ${url} with token.`);
+// This function now correctly calls the /api/channels/stats/overview endpoint
+// for the logged-in user. The backend identifies the user via the token.
+export async function getDashboardOverview(token: string): Promise<DashboardStats> {
+  const url = `${API_URL}/channels/stats/overview`;
+  console.log(`Fetching dashboard overview from ${url} with token.`);
   const res = await fetch(url, {
     headers: {
       "x-api-key": API_KEY,
@@ -19,7 +21,7 @@ export async function getDashboardOverview(userId: string, token: string): Promi
   });
   
   const data = await res.json();
-  console.log(`Response for user ${userId} stats overview:`, data);
+  console.log(`Response for dashboard stats overview:`, data);
 
   if (!res.ok) {
       console.error("Failed to fetch dashboard overview:", res.status, data.message);
