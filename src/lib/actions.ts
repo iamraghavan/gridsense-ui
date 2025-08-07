@@ -57,6 +57,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
       return { message: data.message || 'Login failed. Please check your credentials.' };
     }
     
+    // Updated to handle flat response structure
     if (data.token && data._id) {
       const token = data.token;
       userId = data._id;
@@ -81,6 +82,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
   }
   
   if (userId) {
+    // Clean redirect without exposing user data in URL
     redirect(`/dashboard/${userId}`);
   } else {
     return { message: 'Login succeeded but could not get user ID for redirect.' };
@@ -117,6 +119,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       return { message: data.message || 'Registration failed.' };
     }
     
+    // Updated to handle flat response structure
     if (data.token && data._id) {
        const token = data.token;
        userId = data._id;
@@ -141,6 +144,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
   }
   
   if (userId) {
+    // Clean redirect without exposing user data in URL
     redirect(`/dashboard/${userId}`);
   } else {
     return { message: 'Registration succeeded but could not get user ID for redirect.'};

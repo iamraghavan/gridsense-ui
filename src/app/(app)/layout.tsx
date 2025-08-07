@@ -94,7 +94,7 @@ function LoadingSkeleton() {
             <header className="flex h-14 items-center justify-between gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
                 <Skeleton className="h-8 w-8 md:hidden" />
                 <div className="w-full flex-1">
-                    <Skeleton className="h-6 w-32" />
+                    {/* This space is intentionally left blank for the page title skeleton */}
                 </div>
                 <Skeleton className="h-10 w-10 rounded-full" />
             </header>
@@ -116,6 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     async function initializeSession() {
       console.log("AppLayout: Initializing session...");
+      setIsLoading(true); // Ensure loading state is active
       try {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
@@ -159,10 +160,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   if (!user || !token) {
     // This case should ideally not be hit if the useEffect handles logout correctly,
-    // but it's a safeguard.
+    // but it's a safeguard that prevents rendering children without auth data.
     return <LoadingSkeleton />;
   }
 
+  // This is the guaranteed safe point to render children with props.
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // @ts-ignore
