@@ -89,14 +89,16 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
 
 export default function DashboardPage({ params, user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
+    const [channelCount, setChannelCount] = useState(0);
     const [totalRequests, setTotalRequests] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
         setIsLoading(true);
         try {
-            const { channels: fetchedChannels } = await getChannels(userId, authToken);
+            const { count, channels: fetchedChannels } = await getChannels(userId, authToken);
             setChannels(fetchedChannels);
+            setChannelCount(count);
 
             const total = fetchedChannels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
             setTotalRequests(total);
@@ -137,8 +139,8 @@ export default function DashboardPage({ params, user, token }: DashboardPageProp
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard 
                     title="Total Channels" 
-                    value={channels.length} 
-                    description={`You have ${channels.length} channels in total.`} 
+                    value={channelCount} 
+                    description={`You have ${channelCount} channels in total.`} 
                     icon={Rss} 
                     isLoading={isLoading} 
                 />

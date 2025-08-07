@@ -8,21 +8,21 @@ export function middleware(request: NextRequest) {
   const userCookie = request.cookies.get(USER_DETAILS_COOKIE_NAME);
   const { pathname } = request.nextUrl;
 
-  const authenticatedRoutes = ['/dashboard', '/channels', '/api-keys'];
+  const authenticatedAppRoutes = ['/dashboard', '/channels', '/api-keys'];
   const guestRoutes = ['/login', '/register', '/'];
 
   if (token && userCookie) {
-    // If user is authenticated
+    // User is authenticated
     try {
         const user = JSON.parse(userCookie.value);
         const userId = user.id;
 
-        // If they try to access a guest route, redirect to their dashboard
+        // If trying to access a guest route, redirect to their dashboard
         if (guestRoutes.includes(pathname)) {
             return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
         
-        // If they are on /dashboard, ensure they are on their own dashboard
+        // If they are on the base /dashboard path, ensure they are on their specific user dashboard
         if (pathname === '/dashboard') {
              return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
@@ -36,8 +36,9 @@ export function middleware(request: NextRequest) {
     }
 
   } else {
-    // If user is not authenticated and tries to access a protected route, redirect to login
-    if (authenticatedRoutes.some(route => pathname.startsWith(route))) {
+    // User is not authenticated
+    // If trying to access a protected route, redirect to login
+    if (authenticatedAppRoutes.some(route => pathname.startsWith(route))) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
