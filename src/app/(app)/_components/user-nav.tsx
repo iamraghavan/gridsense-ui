@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { User } from '@/types';
+import { logout } from '@/lib/actions';
 
 interface UserNavProps {
     user: User;
@@ -43,7 +44,13 @@ export function UserNav({ user }: UserNavProps) {
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuItem>API Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Logout</DropdownMenuItem>
+                <form action={logout}>
+                    <button type="submit" className="w-full">
+                        <DropdownMenuItem>
+                            Logout
+                        </DropdownMenuItem>
+                    </button>
+                </form>
             </DropdownMenuContent>
         </DropdownMenu>
     );

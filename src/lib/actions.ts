@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { setSession } from '@/lib/auth';
+import { setSession, deleteSession } from '@/lib/auth';
 import { API_URL } from '@/lib/constants';
 import type { LoginResponse } from '@/types';
 
@@ -43,6 +43,6 @@ export async function login(prevState: any, formData: FormData) {
 }
 
 export async function logout() {
-    // Note: this function is not implemented as part of the current changes.
-    // It will be implemented in a future step.
+    await deleteSession();
+    redirect('/login');
 }
