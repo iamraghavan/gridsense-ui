@@ -160,6 +160,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         if (cachedUser && cachedToken) {
           const parsedUser: User = JSON.parse(cachedUser);
+          // Ensure the user object has the 'id' field, which we use consistently client-side.
           if(!parsedUser.id) {
             parsedUser.id = parsedUser._id;
           }
@@ -207,7 +208,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-        // @ts-ignore
+      // @ts-ignore
       return React.cloneElement(child, { user, token });
     }
     return child;

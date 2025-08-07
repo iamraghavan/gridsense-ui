@@ -80,8 +80,9 @@ export default function ChannelDetailsPage({ params, user, token }: ChannelDetai
         const config: ChartConfig = {};
         if (channel?.fields) {
             channel.fields.forEach((field, index) => {
-                config[field.name] = {
-                    label: `${field.name} (${field.unit || 'N/A'})`,
+                const key = field.name || `field-${index}`;
+                config[key] = {
+                    label: `${field.name || 'Unnamed Field'} (${field.unit || 'N/A'})`,
                     color: `hsl(var(--chart-${(index % 5) + 1}))`,
                 };
             });
@@ -168,7 +169,7 @@ export default function ChannelDetailsPage({ params, user, token }: ChannelDetai
                              />
                             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
                             <ChartLegend content={<ChartLegendContent />} />
-                            {channel.fields.map(field => (
+                            {channel.fields.map(field => field.name ? (
                                 <Area
                                     key={field.name}
                                     dataKey={field.name}
@@ -178,7 +179,7 @@ export default function ChannelDetailsPage({ params, user, token }: ChannelDetai
                                     stroke={`var(--color-${field.name})`}
                                     stackId="a"
                                 />
-                            ))}
+                            ) : null)}
                         </AreaChart>
                     </ChartContainer>
                 ) : (
