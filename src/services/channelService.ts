@@ -79,7 +79,7 @@ export async function getChannelById(channelId: string, token: string): Promise<
   }
 
   try {
-    const response = await fetch(`${API_OURL}/channels/${channelId}`, {
+    const response = await fetch(`${API_URL}/channels/${channelId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
