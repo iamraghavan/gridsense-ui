@@ -24,7 +24,6 @@ const fieldSchema = z.object({
 
 const formSchema = z.object({
   projectName: z.string().min(3, 'Project name must be at least 3 characters long.'),
-  channel_id: z.string().min(3, 'Channel ID must be at least 3 characters long.'),
   description: z.string().min(10, 'Description must be at least 10 characters long.'),
   fields: z.array(fieldSchema).min(1, 'At least one field is required.'),
 });
@@ -40,7 +39,6 @@ export default function CreateChannelPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       projectName: '',
-      channel_id: '',
       description: '',
       fields: [{ name: '', unit: '' }],
     },
@@ -105,20 +103,6 @@ export default function CreateChannelPage() {
                                 <Input placeholder="e.g., Industrial Cooling System" {...field} />
                             </FormControl>
                             <FormDescription>A descriptive name for your project or device.</FormDescription>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    <FormField
-                        control={form.control}
-                        name="channel_id"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Channel ID</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g., temp_sensor_01" {...field} />
-                            </FormControl>
-                            <FormDescription>A unique, URL-safe identifier for this channel.</FormDescription>
                             <FormMessage />
                             </FormItem>
                         )}

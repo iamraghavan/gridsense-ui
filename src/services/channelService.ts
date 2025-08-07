@@ -1,3 +1,4 @@
+
 'use server';
 import { API_URL } from '@/lib/constants';
 import type { Channel } from '@/types';
@@ -42,7 +43,6 @@ export async function getChannels(userId: string, token: string): Promise<Channe
 export async function createChannel(
   channelData: {
     projectName: string;
-    channel_id: string;
     description: string;
     fields: { name: string; unit: string }[];
   },

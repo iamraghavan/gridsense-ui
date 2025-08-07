@@ -1,3 +1,4 @@
+
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -50,7 +51,6 @@ export async function logout() {
 
 export async function createChannel(formData: {
     projectName: string;
-    channel_id: string;
     description: string;
     fields: { name: string; unit: string }[];
 }) {
