@@ -106,14 +106,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             setToken(tokenCookie);
         } catch (e) {
             console.error("Failed to parse user cookie:", e);
+            // This case is handled by the middleware, but as a fallback:
             setUser(null);
             setToken(undefined);
-            logout(); // Force logout if cookie is malformed
         }
-    } else {
-        // If cookies are not found, redirect to login. This might be redundant due to middleware but is a good fallback.
-        redirect('/login');
     }
+    // No 'else' needed as middleware handles redirection for unauthenticated users.
     setIsLoading(false);
   }, []);
 
@@ -152,8 +150,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!user || !token) {
-    // This state should ideally not be reached due to the redirect in useEffect, but it's a safeguard.
-    // Returning null or a loader is better than attempting to render the layout.
+    // This state should ideally not be reached due to middleware.
+    // Returning a loader or null is better than attempting to render a broken layout.
     return null;
   }
 

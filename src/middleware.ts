@@ -4,25 +4,25 @@ import type { NextRequest } from 'next/server'
 import { AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from '@/lib/constants';
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get(AUTH_TOKEN_COOKIE_NAME);
-  const userCookie = request.cookies.get(USER_DETAILS_COOKIE_NAME);
+  const token = request.cookies.get(AUTH_TOKEN_COOKIE_NAME)?.value;
+  const userCookie = request.cookies.get(USER_DETAILS_COOKIE_NAME)?.value;
   const { pathname } = request.nextUrl;
 
-  const authenticatedAppRoutes = ['/dashboard', '/channels', '/api-keys'];
-  const guestRoutes = ['/login', '/register', '/'];
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
+  const isHomePage = pathname === '/';
 
   if (token && userCookie) {
     // User is authenticated
     try {
-        const user = JSON.parse(userCookie.value);
+        const user = JSON.parse(userCookie);
         const userId = user.id;
 
-        // If trying to access a guest route, redirect to their dashboard
-        if (guestRoutes.includes(pathname)) {
+        // If user is authenticated, redirect from auth pages or home page to their dashboard
+        if (isAuthPage || isHomePage) {
             return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
-        
-        // If they are on the base /dashboard path, ensure they are on their specific user dashboard
+
+        // If user is on the base /dashboard path, ensure they are on their specific user dashboard
         if (pathname === '/dashboard') {
              return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
@@ -34,15 +34,15 @@ export function middleware(request: NextRequest) {
         response.cookies.delete(USER_DETAILS_COOKIE_NAME);
         return response;
     }
-
   } else {
     // User is not authenticated
-    // If trying to access a protected route, redirect to login
-    if (authenticatedAppRoutes.some(route => pathname.startsWith(route))) {
+    // If trying to access a protected route (not auth page, not home page), redirect to login
+    if (!isAuthPage && !isHomePage) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
+  // Allow the request to continue
   return NextResponse.next();
 }
 
