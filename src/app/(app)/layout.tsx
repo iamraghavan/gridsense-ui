@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getSession } from '@/lib/auth';
@@ -53,7 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                         </Avatar>
                         <div className="text-left">
                            <p className="text-sm font-medium">{user.name}</p>
-                           <p className="text-xs text-muted-foreground">Profile</p>
+                           <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
                         <span className="sr-only">Toggle user menu</span>
                     </Button>
