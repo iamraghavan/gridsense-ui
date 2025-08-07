@@ -77,7 +77,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
 
     const fetchDashboardData = useCallback(async () => {
         if (!user?.id || !token) {
-            console.log("DashboardPage: Cannot fetch data, user or token is missing.", { userId: user?.id, tokenExists: !!token });
+            console.log("DashboardPage: Cannot fetch data, user or token is missing.");
             return;
         }
         
@@ -116,7 +116,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         <div className="space-y-6">
            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold font-headline">Welcome, {user.name}!</h1>
+                    <h1 className="text-2xl font-bold font-headline">Welcome, {user?.name}!</h1>
                     <p className="text-muted-foreground">
                         An overview of your channels and their latest activity.
                     </p>
