@@ -1,11 +1,11 @@
 
 export interface User {
-  id: string; // Changed from _id to id for consistency
+  id: string; // Changed from _id to id for consistency in client-side code
   name: string;
   email: string;
   apiKey: string;
   createdAt?: string;
-  role?: string; // Added role based on API response
+  role?: string;
 }
 
 export interface ChannelField {

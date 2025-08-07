@@ -38,9 +38,8 @@ interface DashboardPageProps {
 }
 
 async function getChannels(userId: string, token: string): Promise<{ count: number, channels: Channel[] }> {
-  if (!userId || !token) return { count: 0, channels: [] };
+  // The user and token are guaranteed to exist by the time this is called.
   try {
-    // This now correctly uses the specific endpoint for a user's channels.
     const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
         "x-api-key": API_KEY,
@@ -92,8 +91,7 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
 export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [channelCount, setChannelCount] = useState(0);
-    // isLoading is now primarily controlled by the parent layout.
-    // We set initial loading to true until props are available.
+    // The layout handles the main loading state. We only manage data-specific loading here.
     const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
@@ -110,7 +108,7 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
     }, []);
 
     useEffect(() => {
-        // Fetch data only when user and token are available from the layout.
+        // Fetch data now that user and token are guaranteed to be available from the layout.
         if (user?.id && token) {
             fetchDashboardData(user.id, token);
         }
@@ -139,21 +137,21 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard 
                     title="Total Channels" 
-                    value={channelCount} 
+                    value={isLoading ? '...' : channelCount} 
                     description={`You have ${channelCount} channels in total.`} 
                     icon={Rss} 
                     isLoading={isLoading} 
                 />
                 <StatCard 
                     title="Total Requests" 
-                    value={totalRequests.toLocaleString()} 
+                    value={isLoading ? '...' : totalRequests.toLocaleString()} 
                     description="Total data points from all channels." 
                     icon={Activity} 
                     isLoading={isLoading} 
                 />
                  <StatCard 
                     title="Active Fields" 
-                    value={channels.reduce((acc, c) => acc + c.fields.length, 0)} 
+                    value={isLoading ? '...' : channels.reduce((acc, c) => acc + c.fields.length, 0)} 
                     description="Total sensor fields being monitored." 
                     icon={BarChart} 
                     isLoading={isLoading} 

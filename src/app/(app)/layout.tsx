@@ -101,7 +101,7 @@ function LoadingSkeleton() {
 // This is the new, robust layout for the authenticated part of the app.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
-  const [token, setToken] = React.useState<string | undefined>(undefined); // We still need the token for client-side requests
+  const [token, setToken] = React.useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
 
@@ -111,15 +111,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       try {
         const res = await fetch('/api/auth/me'); // This calls the new route handler
         if (!res.ok) {
-          // If the token is invalid or expired, the middleware will handle redirection
-          // by the time the user sees this page. But as a fallback, we can force a logout.
+          // If the token is invalid or expired, the middleware should have already redirected.
+          // As a fallback, force a logout.
           await logout();
           return;
         }
         const data = await res.json();
         console.log("User data fetched successfully on client-side:", data); // Per user request
         setUser(data.user);
-        setToken(data.token); // The BFF can also return the token if needed
+        setToken(data.token); // The BFF returns the user and the original token
       } catch (error) {
         console.error("Failed to fetch user, logging out.", error);
         await logout();
@@ -171,7 +171,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <SidebarMenuItem key={item.href}>
                              <Link href={item.href} className="w-full">
                                 <SidebarMenuButton
-                                    isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
+                                    isActive={pathname.startsWith(item.href)}
                                     tooltip={{ children: item.label }}
                                 >
                                     <item.icon />

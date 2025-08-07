@@ -5,7 +5,6 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from './constants';
-import type { User } from '@/types';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -52,7 +51,8 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     });
 
     const data = await response.json();
-    console.log("Login API Response:", data); // Per user request
+    // Per user request, log the full API response
+    console.log("Login API Response:", data); 
 
     if (!response.ok) {
       return { message: data.message || 'Login failed. Please check your credentials.' };
@@ -61,7 +61,7 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     if (data.token && data._id) {
        userId = data._id; // Get the user ID for the redirect
       
-      // The ONLY thing we store in cookies now is the secure, httpOnly auth token.
+      // The ONLY thing we store in cookies is the secure, httpOnly auth token.
       cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -73,10 +73,11 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
        return { message: 'Login failed: No token or user ID received from API.' };
     }
 
-  } catch (error) {
-     if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-      throw error;
-    }
+  } catch (error: any) {
+    // This is a specific check to allow Next.js's REDIRECT error to be thrown
+     if (error.message.includes('NEXT_REDIRECT')) {
+        throw error;
+     }
     console.error('Login error:', error);
     return { message: 'An unexpected error occurred.' };
   }
@@ -109,6 +110,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     });
     
     const data = await response.json();
+    console.log("Register API Response:", data);
 
     if (!response.ok) {
       return { message: data.message || 'Registration failed.' };
@@ -128,10 +130,11 @@ export async function register(prevState: AuthState, formData: FormData): Promis
         return { message: 'Registration failed: No token or user data received.' };
     }
 
-  } catch (error) {
-     if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+  } catch (error: any) {
+    if (error.message.includes('NEXT_REDIRECT')) {
       throw error;
     }
+    console.error('Registration error:', error);
     return { message: 'An unexpected error occurred during registration.' };
   }
 
