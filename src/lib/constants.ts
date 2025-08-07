@@ -1,2 +1,1 @@
-
-// This file has been wiped clean.
+export const API_URL = 'https://node-sensor-gird.onrender.com/api';

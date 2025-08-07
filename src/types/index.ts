@@ -1,2 +1,41 @@
+export interface User {
+    _id: string;
+    name: string;
+    email: string;
+    role: 'user' | 'admin';
+    apiKey: string;
+    token?: string; 
+}
 
-// This file has been wiped clean.
+export interface LoginResponse extends User {
+    message?: string;
+}
+
+export interface Channel {
+    _id: string;
+    channel_id: string;
+    userId: string;
+    projectName: string;
+    description: string;
+    fields: {
+        name: string;
+        unit: string;
+        _id: string;
+    }[];
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+    latestData?: Record<string, number>;
+    lastUpdate?: string;
+    totalEntries?: number;
+}
+
+export interface ChannelStats {
+    totalChannels: number;
+    totalFields: number;
+    totalRequests: number;
+}
+
+export interface FieldStats {
+    [key: string]: number;
+}
