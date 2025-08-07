@@ -81,7 +81,6 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
             return;
         }
         
-        console.log(`DashboardPage: Starting to fetch data for user ${user.id}`);
         setIsDataLoading(true);
         try {
             const [statsResponse, channelsResponse] = await Promise.all([
@@ -89,7 +88,6 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
                 getChannels(user.id, token)
             ]);
             
-            console.log("DashboardPage: Successfully fetched data.", { statsResponse, channelsResponse });
             setStats(statsResponse);
             setChannels(channelsResponse.channels);
 
@@ -101,7 +99,6 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
               description: error.message || "Could not fetch stats and channels. Please try again later.",
             });
         } finally {
-            console.log("DashboardPage: Finished fetching data.");
             setIsDataLoading(false);
         }
     }, [user?.id, token, toast]);
