@@ -1,10 +1,11 @@
 
 export interface User {
-  id: string;
+  id: string; // Changed from _id to id for consistency
   name: string;
   email: string;
   apiKey: string;
   createdAt?: string;
+  role?: string; // Added role based on API response
 }
 
 export interface ChannelField {

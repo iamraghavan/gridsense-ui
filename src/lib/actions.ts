@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from './constants';
+import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME } from './constants';
 import type { User } from '@/types';
 
 const loginSchema = z.object({
@@ -52,28 +52,25 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     });
 
     const data = await response.json();
+    console.log("Login API Response:", data); // Per user request
 
     if (!response.ok) {
       return { message: data.message || 'Login failed. Please check your credentials.' };
     }
     
-    if (data.token) {
-      const cookieOptions = {
+    if (data.token && data._id) {
+       userId = data._id; // Get the user ID for the redirect
+      
+      // The ONLY thing we store in cookies now is the secure, httpOnly auth token.
+      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' as 'lax',
+        sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 1 week
-      };
-      
-      const user: User = { id: data._id, name: data.name, email: data.email, apiKey: data.apiKey, createdAt: data.createdAt };
-      userId = user.id;
-
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
-      cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
-
+      });
     } else {
-       return { message: 'Login failed: No token received.' };
+       return { message: 'Login failed: No token or user ID received from API.' };
     }
 
   } catch (error) {
@@ -84,12 +81,8 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     return { message: 'An unexpected error occurred.' };
   }
   
-  if (userId) {
-    redirect(`/dashboard/${userId}`);
-  }
-
-  // This part should not be reached if login is successful
-  return { message: 'Login flow failed unexpectedly.' };
+  // Redirect MUST happen outside the try...catch block
+  redirect(`/dashboard/${userId}`);
 }
 
 export async function register(prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -121,22 +114,16 @@ export async function register(prevState: AuthState, formData: FormData): Promis
       return { message: data.message || 'Registration failed.' };
     }
     
-    if (data.token && data.user) {
-      const cookieOptions = {
+    if (data.token && data.user?._id) {
+      userId = data.user._id;
+
+      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' as 'lax',
+        sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 1 week
-      };
-      
-      const userData = data.user;
-      const user: User = { id: userData._id, name: userData.name, email: userData.email, apiKey: userData.apiKey, createdAt: userData.createdAt };
-      userId = user.id;
-
-      cookies().set(AUTH_TOKEN_COOKIE_NAME, data.token, cookieOptions);
-      cookies().set(USER_DETAILS_COOKIE_NAME, JSON.stringify(user), cookieOptions);
-
+      });
     } else {
         return { message: 'Registration failed: No token or user data received.' };
     }
@@ -148,15 +135,10 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     return { message: 'An unexpected error occurred during registration.' };
   }
 
-  if (userId) {
-    redirect(`/dashboard/${userId}`);
-  }
-   // This part should not be reached if registration is successful
-  return { message: 'Registration flow failed unexpectedly.' };
+  redirect(`/dashboard/${userId}`);
 }
 
 export async function logout() {
   cookies().delete(AUTH_TOKEN_COOKIE_NAME);
-  cookies().delete(USER_DETAILS_COOKIE_NAME);
   redirect('/login');
 }

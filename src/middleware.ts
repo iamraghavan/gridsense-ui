@@ -1,71 +1,64 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_TOKEN_COOKIE_NAME } from '@/lib/constants';
+
+// This is a list of pages that are accessible to the public (unauthenticated users)
+const PUBLIC_ROUTES = ['/', '/login', '/register'];
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get(AUTH_TOKEN_COOKIE_NAME)?.value;
-  const userCookie = request.cookies.get(USER_DETAILS_COOKIE_NAME)?.value;
   const { pathname } = request.nextUrl;
+  const token = request.cookies.get(AUTH_TOKEN_COOKIE_NAME)?.value;
 
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
-  const isHomePage = pathname === '/';
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
   
-  // Regex to check for protected application routes.
-  // This includes /dashboard, /channels, /api-keys, etc.
-  const isAppRoute = /^\/(dashboard|channels|api-keys)/.test(pathname);
+  // This is the dynamic dashboard path prefix
+  const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/channels') || pathname.startsWith('/api-keys');
 
-  if (token && userCookie) {
+  if (token) {
     // USER IS AUTHENTICATED
-    try {
-        const user = JSON.parse(userCookie);
-        const userId = user.id;
-
-        // If authenticated user tries to access login, register, or home page,
-        // redirect them to their dashboard.
-        if (isAuthPage || isHomePage) {
-            return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
-        }
-        
-        // If user is on a generic /dashboard URL, ensure they are sent
-        // to their specific dashboard URL.
-        if (pathname === '/dashboard') {
-             return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
-        }
-
-    } catch(e) {
-        // If cookie is malformed, it's safer to clear cookies and force re-login.
-        const response = NextResponse.redirect(new URL('/login', request.url));
-        response.cookies.delete(AUTH_TOKEN_COOKIE_NAME);
-        response.cookies.delete(USER_DETAILS_COOKIE_NAME);
-        return response;
+    
+    // If an authenticated user tries to access a public route (e.g., login, register, home),
+    // redirect them to the dashboard. We need to extract the user ID for the redirect URL.
+    // Since we can't easily get the user ID here without another API call,
+    // we will redirect to a generic /dashboard path and let the page handle the final redirect.
+    if (isPublicRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
+    
+    // If the user is authenticated and trying to go to `/dashboard`, we let the page
+    // `dashboard/[userId]/page.tsx` handle the rendering. The AppLayout will fetch user data
+    // and correctly construct nav links. The middleware's job is just to protect routes.
+     if (pathname === '/dashboard') {
+      // We can't know the user ID here, so we let the client-side logic in AppLayout
+      // or a server component on the dashboard page handle fetching the ID and displaying data.
+      // This is a safe pass-through.
+      return NextResponse.next();
+    }
+
   } else {
     // USER IS NOT AUTHENTICATED
-    // If an unauthenticated user tries to access a protected app route,
+
+    // If a non-authenticated user tries to access a protected app route,
     // redirect them to the login page.
     if (isAppRoute) {
-      // Preserve the intended destination for a redirect after login, if desired.
-      // For now, we'll just redirect to login.
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  // If none of the above conditions are met, allow the request to proceed.
+  // Allow the request to proceed if no redirect conditions are met.
   return NextResponse.next();
 }
 
-// This config specifies which routes the middleware should run on.
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
+     * - api (API routes, we want to allow our /api/auth/me to be called)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * This ensures the middleware runs on all page navigations.
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }

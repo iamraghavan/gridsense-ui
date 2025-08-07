@@ -40,6 +40,7 @@ interface DashboardPageProps {
 async function getChannels(userId: string, token: string): Promise<{ count: number, channels: Channel[] }> {
   if (!userId || !token) return { count: 0, channels: [] };
   try {
+    // This now correctly uses the specific endpoint for a user's channels.
     const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
         "x-api-key": API_KEY,
@@ -55,7 +56,7 @@ async function getChannels(userId: string, token: string): Promise<{ count: numb
     if (data && typeof data.count === 'number' && Array.isArray(data.channels)) {
         return data;
     }
-    console.error("Unexpected API response structure:", data);
+    console.error("Unexpected API response structure for channels:", data);
     return { count: 0, channels: [] };
   } catch (error) {
     console.error("Failed to fetch channels", error);
@@ -87,13 +88,16 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
     );
 }
 
+// The page now receives user and token as props, simplifying its logic.
 export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [channelCount, setChannelCount] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
+    // isLoading is now primarily controlled by the parent layout.
+    // We set initial loading to true until props are available.
+    const [isDataLoading, setIsDataLoading] = useState(true);
 
     const fetchDashboardData = useCallback(async (userId: string, authToken: string) => {
-        setIsLoading(true);
+        setIsDataLoading(true);
         try {
             const { count, channels: fetchedChannels } = await getChannels(userId, authToken);
             setChannels(fetchedChannels);
@@ -101,28 +105,26 @@ export default function DashboardPage({ user, token }: DashboardPageProps) {
         } catch (error) {
             console.error("Failed to fetch dashboard data", error);
         } finally {
-            setIsLoading(false);
+            setIsDataLoading(false);
         }
     }, []);
 
     useEffect(() => {
+        // Fetch data only when user and token are available from the layout.
         if (user?.id && token) {
             fetchDashboardData(user.id, token);
-        } else {
-             // If no user/token, it means the layout is still loading them.
-             // We set loading to true and wait for props to be available.
-             setIsLoading(true);
         }
     }, [user, token, fetchDashboardData]);
 
     const totalRequests = channels.reduce((acc, channel) => acc + (channel.totalEntries || 0), 0);
     const recentChannels = channels.slice(0, 5);
+    const isLoading = !user || isDataLoading; // Combined loading state
 
     return (
         <div className="space-y-6">
            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold font-headline">Welcome, {user?.name}!</h1>
+                    <h1 className="text-2xl font-bold font-headline">Welcome, {user?.name || '...'}!</h1>
                     <p className="text-muted-foreground">
                         An overview of your channels and their latest activity.
                     </p>

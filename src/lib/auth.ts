@@ -2,33 +2,42 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from './constants';
+import { AUTH_TOKEN_COOKIE_NAME } from './constants';
 import type { User } from '@/types';
+import { API_URL, API_KEY } from './constants';
 
-// This function needs to be async to use `cookies()`
-export async function getUser(): Promise<{ user: User | null }> {
-  // We don't need to await `cookies()` itself, but we should be in an async function
-  // to properly handle the promise-like nature of the cookie store in some contexts.
-  const cookieStore = cookies();
+
+// This function is now the single source of truth for fetching the logged-in user's data on the server.
+export async function getUser(): Promise<{ user: User | null; token: string | null }> {
+  const token = cookies().get(AUTH_TOKEN_COOKIE_NAME)?.value;
   
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
   if (!token) {
-    return { user: null };
-  }
-
-  const userDetailsCookie = cookieStore.get(USER_DETAILS_COOKIE_NAME)?.value;
-  if (!userDetailsCookie) {
-    // If we have a token but no user details, the session is inconsistent.
-    // It's safer to treat the user as logged out.
-    // We could also try to re-fetch from an API here if we had an endpoint for it.
-    return { user: null };
+    return { user: null, token: null };
   }
 
   try {
-    const user: User = JSON.parse(userDetailsCookie);
-    return { user };
+    // Make a secure, server-to-server call to your backend API to get user details.
+    const res = await fetch(`${API_URL}/auth/me`, {
+       headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-api-key': API_KEY,
+      },
+      // Important: Use no-store to ensure we always get the latest user data
+      // and not a cached version.
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+        console.error("Failed to fetch user from API", await res.text());
+        return { user: null, token: null };
+    }
+
+    const data = await res.json();
+    // Assuming the API returns { user: User, token: string }
+    return { user: data.user, token: data.token };
+
   } catch (error) {
-    console.error('Failed to parse user details from cookie:', error);
-    return { user: null };
+    console.error('Failed to fetch user in getUser:', error);
+    return { user: null, token: null };
   }
 }

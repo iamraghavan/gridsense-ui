@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft, Rss, Activity, Calendar, Tag } from "lucide-react";
 import type { Channel, ChannelDataPoint, User } from "@/types";
-import { API_URL, API_KEY, AUTH_TOKEN_COOKIE_NAME, USER_DETAILS_COOKIE_NAME } from "@/lib/constants";
+import { API_URL, API_KEY } from "@/lib/constants";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -70,10 +70,12 @@ function StatCard({ title, value, icon: Icon }: { title: string, value: string |
     );
 }
 
-export default function ChannelDetailsPage({ params }: { params: { channelId: string } }) {
+// This component now receives the token as a prop from AppLayout
+export default function ChannelDetailsPage({ params, token: initialToken }: { params: { channelId: string }, token?: string }) {
     const [channel, setChannel] = useState<CombinedChannel | null>(null);
-    const [token, setToken] = useState<string | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(true);
+    // The token is passed as a prop, making it available immediately.
+    const token = initialToken;
 
     const fetchChannelData = useCallback(async (authToken: string) => {
         setIsLoading(true);
@@ -88,18 +90,15 @@ export default function ChannelDetailsPage({ params }: { params: { channelId: st
     }, [params.channelId]);
 
     useEffect(() => {
-        const cookieValue = document.cookie
-            .split('; ')
-            .find(row => row.startsWith(`${AUTH_TOKEN_COOKIE_NAME}=`))
-            ?.split('=')[1];
-        setToken(cookieValue);
-
-        if (cookieValue) {
-            fetchChannelData(cookieValue);
+        if (token) {
+            fetchChannelData(token);
         } else {
+            // If there's no token, it might mean the layout is still loading.
+            // Or the user is unauthenticated, in which case middleware should have redirected.
+            // We set loading to false to avoid an infinite spinner if something goes wrong.
             setIsLoading(false);
         }
-    }, [fetchChannelData]);
+    }, [token, fetchChannelData]);
 
     const chartConfig = useMemo(() => {
         const config: ChartConfig = {};

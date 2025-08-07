@@ -25,7 +25,6 @@ import {
 import { Logo } from '@/components/logo';
 import { logout } from '@/lib/actions';
 import type { User } from '@/types';
-import { USER_DETAILS_COOKIE_NAME, AUTH_TOKEN_COOKIE_NAME } from '@/lib/constants';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Sidebar,
@@ -39,14 +38,6 @@ import {
   SidebarTrigger,
   SidebarInset,
 } from '@/components/ui/sidebar';
-
-// Helper function to get a cookie by name on the client side
-const getCookie = (name: string): string | undefined => {
-    if (typeof document === 'undefined') return undefined;
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift();
-};
 
 function UserMenu({ user }: { user: User }) {
     return (
@@ -107,32 +98,36 @@ function LoadingSkeleton() {
     );
 }
 
+// This is the new, robust layout for the authenticated part of the app.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
-  const [token, setToken] = React.useState<string | undefined>(undefined);
+  const [token, setToken] = React.useState<string | undefined>(undefined); // We still need the token for client-side requests
   const [isLoading, setIsLoading] = React.useState(true);
   const pathname = usePathname();
 
   React.useEffect(() => {
-    const userCookie = getCookie(USER_DETAILS_COOKIE_NAME);
-    const tokenCookie = getCookie(AUTH_TOKEN_COOKIE_NAME);
-
-    if (userCookie && tokenCookie) {
-        try {
-            const parsedUser = JSON.parse(decodeURIComponent(userCookie));
-            setUser(parsedUser);
-            setToken(tokenCookie);
-        } catch (e) {
-            console.error("Failed to parse user cookie:", e);
-            setUser(null);
-            setToken(undefined);
-            // Optional: force logout if cookies are corrupted
-            logout();
+    // Fetch user data from our secure BFF endpoint
+    async function fetchUser() {
+      try {
+        const res = await fetch('/api/auth/me'); // This calls the new route handler
+        if (!res.ok) {
+          // If the token is invalid or expired, the middleware will handle redirection
+          // by the time the user sees this page. But as a fallback, we can force a logout.
+          await logout();
+          return;
         }
+        const data = await res.json();
+        console.log("User data fetched successfully on client-side:", data); // Per user request
+        setUser(data.user);
+        setToken(data.token); // The BFF can also return the token if needed
+      } catch (error) {
+        console.error("Failed to fetch user, logging out.", error);
+        await logout();
+      } finally {
+        setIsLoading(false);
+      }
     }
-    // The middleware handles redirection for unauthenticated users.
-    // If we are here, we expect valid cookies.
-    setIsLoading(false);
+    fetchUser();
   }, []);
 
   const navItems = React.useMemo(() => {
@@ -147,16 +142,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return <LoadingSkeleton />;
   }
-
-  if (!user || !token) {
-    // This can happen briefly before middleware redirects, or if cookies are invalid.
-    // Showing a loader is better than a broken page.
+  
+  // The middleware should prevent this state, but as a fallback:
+  if (!user) {
     return <LoadingSkeleton />;
   }
   
+  // Clone children and inject user/token props for them to use
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      // @ts-ignore
+      // @ts-ignore - a bit of a hack to pass props, but effective
       return React.cloneElement(child, { user, token });
     }
     return child;
@@ -176,7 +171,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <SidebarMenuItem key={item.href}>
                              <Link href={item.href} className="w-full">
                                 <SidebarMenuButton
-                                    isActive={pathname.startsWith(item.href)}
+                                    isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                                     tooltip={{ children: item.label }}
                                 >
                                     <item.icon />
