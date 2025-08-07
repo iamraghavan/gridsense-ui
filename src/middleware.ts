@@ -10,44 +10,52 @@ export function middleware(request: NextRequest) {
 
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
   const isHomePage = pathname === '/';
-  // Check if it's any page under the (app) group
-  const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/channels') || pathname.startsWith('/api-keys');
+  
+  // Regex to check for protected application routes.
+  // This includes /dashboard, /channels, /api-keys, etc.
+  const isAppRoute = /^\/(dashboard|channels|api-keys)/.test(pathname);
 
   if (token && userCookie) {
-    // User is authenticated
+    // USER IS AUTHENTICATED
     try {
         const user = JSON.parse(userCookie);
         const userId = user.id;
 
-        // If user is authenticated, redirect from auth pages or home page to their dashboard
+        // If authenticated user tries to access login, register, or home page,
+        // redirect them to their dashboard.
         if (isAuthPage || isHomePage) {
             return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
         
-        // If user is on a generic app route like /dashboard, redirect to their specific one
+        // If user is on a generic /dashboard URL, ensure they are sent
+        // to their specific dashboard URL.
         if (pathname === '/dashboard') {
              return NextResponse.redirect(new URL(`/dashboard/${userId}`, request.url));
         }
 
     } catch(e) {
-        // If cookie is malformed, clear it and redirect to login
+        // If cookie is malformed, it's safer to clear cookies and force re-login.
         const response = NextResponse.redirect(new URL('/login', request.url));
         response.cookies.delete(AUTH_TOKEN_COOKIE_NAME);
         response.cookies.delete(USER_DETAILS_COOKIE_NAME);
         return response;
     }
   } else {
-    // User is not authenticated
-    // If trying to access a protected app route, redirect to login
+    // USER IS NOT AUTHENTICATED
+    // If an unauthenticated user tries to access a protected app route,
+    // redirect them to the login page.
     if (isAppRoute) {
+      // Preserve the intended destination for a redirect after login, if desired.
+      // For now, we'll just redirect to login.
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  // Allow the request to continue for all other cases
+  // If none of the above conditions are met, allow the request to proceed.
   return NextResponse.next();
 }
 
+// This config specifies which routes the middleware should run on.
 export const config = {
   matcher: [
     /*
@@ -56,6 +64,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * This ensures the middleware runs on all page navigations.
      */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],

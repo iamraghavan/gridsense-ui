@@ -33,12 +33,12 @@ import { useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardPageProps {
-  params: { userId: string };
   user: User; // Injected by AppLayout
   token: string; // Injected by AppLayout
 }
 
 async function getChannels(userId: string, token: string): Promise<{ count: number, channels: Channel[] }> {
+  if (!userId || !token) return { count: 0, channels: [] };
   try {
     const res = await fetch(`${API_URL}/channels/user/${userId}`, {
       headers: {
@@ -87,7 +87,7 @@ function StatCard({ title, value, description, icon: Icon, isLoading }: { title:
     );
 }
 
-export default function DashboardPage({ params, user, token }: DashboardPageProps) {
+export default function DashboardPage({ user, token }: DashboardPageProps) {
     const [channels, setChannels] = useState<Channel[]>([]);
     const [channelCount, setChannelCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -106,12 +106,12 @@ export default function DashboardPage({ params, user, token }: DashboardPageProp
     }, []);
 
     useEffect(() => {
-        // user and token are now passed as props, so we can rely on them
         if (user?.id && token) {
             fetchDashboardData(user.id, token);
         } else {
-             // If no user/token, stop loading. The layout would likely not render this anyway.
-             setIsLoading(false);
+             // If no user/token, it means the layout is still loading them.
+             // We set loading to true and wait for props to be available.
+             setIsLoading(true);
         }
     }, [user, token, fetchDashboardData]);
 
@@ -122,7 +122,7 @@ export default function DashboardPage({ params, user, token }: DashboardPageProp
         <div className="space-y-6">
            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
+                    <h1 className="text-2xl font-bold font-headline">Welcome, {user?.name}!</h1>
                     <p className="text-muted-foreground">
                         An overview of your channels and their latest activity.
                     </p>
