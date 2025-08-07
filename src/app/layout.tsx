@@ -1,7 +1,7 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { BodyWithHydrationSuppression } from '@/components/body-with-hydration-suppression';
 
 export const metadata: Metadata = {
   title: 'New Project',
@@ -15,10 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <BodyWithHydrationSuppression>
         {children}
         <Toaster />
-      </body>
+      </BodyWithHydrationSuppression>
     </html>
   );
 }
