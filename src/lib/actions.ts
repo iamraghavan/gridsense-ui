@@ -1,10 +1,9 @@
-
 'use server';
 
 import { redirect } from 'next/navigation';
 import { setSession, deleteSession, getSession } from '@/lib/auth';
 import { createChannel as createChannelService } from '@/services/channelService';
-import type { LoginResponse } from '@/types';
+import type { LoginResponse, User } from '@/types';
 import { revalidatePath } from 'next/cache';
 
 export async function login(prevState: any, formData: FormData) {
@@ -44,6 +43,46 @@ export async function login(prevState: any, formData: FormData) {
   }
 }
 
+export async function register(prevState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!name || !email || !password) {
+    return { error: 'All fields are required' };
+  }
+
+  try {
+    const response = await fetch(`${process.env.API_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf'
+      },
+      body: JSON.stringify({ name, email, password, role: 'user' }),
+    });
+
+    const data: LoginResponse = await response.json();
+
+    if (!response.ok || response.status !== 201) {
+      return { error: data.message || 'Registration failed' };
+    }
+
+    if (data.token && data._id) {
+        // Automatically log the user in upon successful registration
+        await setSession(data.token, data);
+        return { success: true, user: data };
+    } else {
+        return { error: 'Registration failed: No token or user ID received.' };
+    }
+
+  } catch (error) {
+    console.error(error);
+    return { error: 'An unexpected error occurred.' };
+  }
+}
+
+
 export async function logout() {
     await deleteSession();
     redirect('/login');
@@ -63,7 +102,7 @@ export async function createChannel(formData: {
         const response = await createChannelService(formData, session.token);
 
         if (response?.success) {
-            revalidatePath('/channel');
+            revalidatePath('/dashboard/' + session.user._id + '/channel');
             return { success: true };
         } else {
             return { error: response?.message || 'Failed to create channel.' };

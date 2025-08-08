@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 
 import { login } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -32,7 +33,7 @@ export default function LoginPage() {
     if (state?.success && state.user) {
       toast({
         title: 'Login successful',
-        description: `Redirecting to dashboard for user: ${state.user.name}`,
+        description: `Welcome back, ${state.user.name}!`,
       });
       router.push(`/dashboard/${state.user._id}`);
     } else if (state?.error) {
@@ -49,7 +50,7 @@ export default function LoginPage() {
       <CardHeader>
         <CardTitle className="text-2xl">Login</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account.
+          Enter your email and password to access your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -71,6 +72,14 @@ export default function LoginPage() {
           <SubmitButton />
         </form>
       </CardContent>
+       <CardFooter className="text-sm">
+          <p className="w-full text-center text-muted-foreground">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Register
+            </Link>
+          </p>
+        </CardFooter>
     </Card>
   );
 }
