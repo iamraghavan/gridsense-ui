@@ -14,6 +14,7 @@ interface UserNavProps {
 export function UserNav({ user }: UserNavProps) {
     const [open, setOpen] = useState(false);
     const userInitials = user.name.split(' ').map(n => n[0]).join('');
+    const avatarUrl = `https://eu.ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&size=100`;
 
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -24,7 +25,7 @@ export function UserNav({ user }: UserNavProps) {
                     onMouseEnter={() => setOpen(true)}
                 >
                     <Avatar>
-                        <AvatarImage src={`https://placehold.co/100x100.png`} alt={user.name} />
+                        <AvatarImage src={avatarUrl} alt={user.name} />
                         <AvatarFallback>{userInitials}</AvatarFallback>
                     </Avatar>
                     <div className="text-left">
