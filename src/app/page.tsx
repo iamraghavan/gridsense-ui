@@ -142,8 +142,8 @@ function AboutSection() {
                         </div>
                     </div>
                      <div className="lg:pr-4">
-                        <div className="relative overflow-hidden rounded-3xl bg-muted px-6 pb-9 pt-64 shadow-2xl sm:px-12 lg:px-8 lg:pb-8 xl:px-10 xl:pb-10">
-                            <img className="absolute inset-0 h-full w-full object-cover" src="https://placehold.co/1080x720.png" alt="" data-ai-hint="smart home" />
+                        <div className="relative aspect-square overflow-hidden rounded-3xl bg-muted shadow-2xl">
+                            <img className="absolute inset-0 h-full w-full object-cover" src="https://assets.grok.com/anon-users/0148fcfb-c5d0-480a-97fb-d36a58b12f84/generated/3d0809f7-4750-4406-94a2-57bfc8184151/image.jpg" alt="" data-ai-hint="smart home" />
                         </div>
                     </div>
                 </div>
