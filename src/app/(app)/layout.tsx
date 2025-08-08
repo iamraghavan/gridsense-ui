@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getSession } from '@/lib/auth';
@@ -30,7 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href={`/dashboard/${user._id}/channel`} className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
             Channels
           </Link>
-          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
+          <Link href={`/dashboard/${user._id}/apikey`} className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
             API Docs
           </Link>
           <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap">
