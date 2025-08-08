@@ -8,9 +8,9 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, formatDistanceToNow } from 'date-fns';
-import type { Channel, ChannelHistory } from '@/types';
+import type { Channel, ChannelHistory, ChannelStats } from '@/types';
 import { useSocket } from '@/hooks/use-socket';
-import { ArrowLeft, Rss, Clock, Hash, Thermometer, Droplets } from 'lucide-react';
+import { ArrowLeft, Clock, Hash, Rss } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -34,14 +34,18 @@ const getFieldColor = (fieldName: string, index: number) => {
     return chartColors[index % chartColors.length] || stringToColor(fieldName);
 };
 
+interface ChannelDetailClientProps {
+    channel: Channel;
+    initialHistory: ChannelHistory[];
+    initialStats: ChannelStats | null;
+    initialLatestData: ChannelHistory | null;
+}
 
-export function ChannelDetailClient({ channel }: { channel: Channel }) {
-    const [history, setHistory] = useState<ChannelHistory[]>(channel.history || []);
+export function ChannelDetailClient({ channel, initialHistory, initialStats, initialLatestData }: ChannelDetailClientProps) {
+    const [history, setHistory] = useState<ChannelHistory[]>(initialHistory);
+    const [stats, setStats] = useState<ChannelStats | null>(initialStats);
+    const [latestData, setLatestData] = useState<Record<string, number> | undefined>(initialLatestData?.data);
     const [selectedField, setSelectedField] = useState<string>(channel.fields[0]?.name || 'all');
-    
-    // Initialize state with data from the channel prop to avoid "N/A" on load.
-    const [latestData, setLatestData] = useState<Record<string, number> | undefined>(channel.latestData);
-    const [lastUpdate, setLastUpdate] = useState<string | undefined>(channel.lastUpdate);
     
     const { socket } = useSocket(channel.userId);
 
@@ -50,8 +54,12 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
             const handleHistoryUpdate = (newHistoryEntry: ChannelHistory) => {
                 if (newHistoryEntry.channelId === channel.channel_id) {
                      setHistory(prevHistory => [...prevHistory, newHistoryEntry]);
-                    setLatestData(newHistoryEntry.data);
-                    setLastUpdate(newHistoryEntry.createdAt);
+                     setLatestData(newHistoryEntry.data);
+                     setStats(prevStats => ({
+                         ...prevStats!,
+                         totalEntries: (prevStats?.totalEntries ?? 0) + 1,
+                         lastUpdate: newHistoryEntry.createdAt,
+                     }));
                 }
             };
             socket.on('historyUpdate', handleHistoryUpdate);
@@ -82,6 +90,9 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
     const fieldsToDisplay = selectedField === 'all' 
         ? channel.fields 
         : channel.fields.filter(f => f.name === selectedField);
+        
+    const totalEntries = stats?.totalEntries ?? history.length;
+    const lastUpdate = stats?.lastUpdate;
 
     return (
         <div className="flex-1 space-y-6 pt-6">
@@ -102,7 +113,7 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
                         <div className="flex items-center gap-4">
                            <div className='text-right'>
                              <p className="text-sm font-medium">Total Entries</p>
-                             <p className="text-2xl font-bold">{history.length}</p>
+                             <p className="text-2xl font-bold">{totalEntries}</p>
                            </div>
                            <div className="w-48">
                                 <Select value={selectedField} onValueChange={setSelectedField}>
@@ -181,7 +192,7 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
                         </div>
                         <div className="flex items-center justify-between">
                            <span className="text-muted-foreground flex items-center"><Hash className="mr-2 h-4 w-4" />Total Entries</span>
-                           <span className="font-semibold">{history.length}</span>
+                           <span className="font-semibold">{totalEntries}</span>
                         </div>
                     </CardContent>
                 </Card>

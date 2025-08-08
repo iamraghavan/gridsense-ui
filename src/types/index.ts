@@ -1,3 +1,4 @@
+
 export interface User {
     _id: string;
     name: string;
@@ -32,17 +33,18 @@ export interface Channel {
     createdAt: string;
     updatedAt: string;
     __v: number;
-    latestData?: Record<string, number>;
-    lastUpdate?: string;
-    totalEntries?: number;
-    history?: ChannelHistory[];
+    history?: ChannelHistory[]; // This might be paginated, so don't rely on it for counts/latest
 }
 
 export interface ChannelStats {
-    totalChannels: number;
-    totalFields: number;
-    totalRequests: number;
+    totalChannels?: number; // From dashboard overview
+    totalFields?: number; // From dashboard overview
+    totalRequests?: number; // From dashboard overview
+    channelId?: string; // From channel-specific stats
+    totalEntries?: number; // From channel-specific stats
+    lastUpdate?: string; // From channel-specific stats
 }
+
 
 export interface FieldStats {
     [key: string]: number;

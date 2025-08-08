@@ -1,7 +1,7 @@
 
 'use server';
 import { API_URL } from '@/lib/constants';
-import type { Channel } from '@/types';
+import type { Channel, ChannelHistory, ChannelStats } from '@/types';
 
 interface ChannelsResponse {
   count: number;
@@ -73,41 +73,65 @@ export async function createChannel(
   }
 }
 
+// Fetches basic channel details
+async function getChannelById(channelId: string, token: string): Promise<Channel | null> {
+  const res = await fetch(`${API_URL}/channels/${channelId}`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf' },
+    cache: 'no-store',
+  });
+  return res.ok ? res.json() : null;
+}
 
-export async function getChannelById(channelId: string, token: string): Promise<Channel | null> {
-  if (!channelId || !token) {
-    console.error('getChannelById: Missing channelId or token');
-    return null;
-  }
+// Fetches channel history for the chart
+async function getChannelHistory(channelId: string, token: string): Promise<ChannelHistory[]> {
+  const res = await fetch(`${API_URL}/sensors/${channelId}/history?limit=100`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf' },
+    cache: 'no-store',
+  });
+  return res.ok ? res.json() : [];
+}
 
-  try {
-    const response = await fetch(`${API_URL}/channels/${channelId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf',
-        'Authorization': `Bearer ${token}`,
-      },
-      cache: 'no-store', // Always fetch the latest channel data
+// Fetches the latest data entry
+async function getLatestChannelData(channelId: string, token: string): Promise<ChannelHistory | null> {
+  const res = await fetch(`${API_URL}/sensors/${channelId}/latest`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf' },
+    cache: 'no-store',
+  });
+  return res.ok ? res.json() : null;
+}
+
+// Fetches stats like total entries and last update time
+async function getChannelStats(channelId: string, token: string): Promise<ChannelStats | null> {
+    const res = await fetch(`${API_URL}/channels/${channelId}/stats`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf' },
+        cache: 'no-store',
     });
+    return res.ok ? res.json() : null;
+}
 
-    if (!response.ok) {
-        if (response.status === 404) {
-            return null; // Handle not found gracefully
-        }
-        console.error(`Error fetching channel: ${response.status} ${response.statusText}`);
-        const errorBody = await response.text();
-        console.error("Error body:", errorBody);
+// New function to fetch all data for the detail page in parallel
+export async function getChannelPageData(channelId: string, token: string) {
+    if (!channelId || !token) {
+        console.error('getChannelPageData: Missing channelId or token');
         return null;
     }
+    
+    try {
+        const [channel, history, latestData, stats] = await Promise.all([
+            getChannelById(channelId, token),
+            getChannelHistory(channelId, token),
+            getLatestChannelData(channelId, token),
+            getChannelStats(channelId, token),
+        ]);
 
-    const data: Channel = await response.json();
-    return data;
-  } catch (error) {
-    console.error('getChannelById: An unexpected error occurred:', error);
-    return null;
-  }
+        return { channel, history, latestData, stats };
+
+    } catch (error) {
+        console.error('getChannelPageData: An unexpected error occurred:', error);
+        return null;
+    }
 }
+
 
 export async function updateChannel(
   channelId: string,

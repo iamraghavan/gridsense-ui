@@ -1,9 +1,10 @@
+
 'use server';
 
 import React from 'react';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { getChannelById } from '@/services/channelService';
+import { getChannelPageData } from '@/services/channelService';
 import { notFound } from 'next/navigation';
 import { ChannelDetailClient } from './_components/channel-detail-client';
 import type { Metadata, ResolvingMetadata } from 'next';
@@ -22,11 +23,11 @@ export async function generateMetadata(
         title: 'Channel Not Found'
     }
   }
-  const channel = await getChannelById(params.channelId, session.token);
+  const data = await getChannelPageData(params.channelId, session.token);
  
   return {
-    title: channel ? `${channel.projectName}` : 'Channel Details',
-    description: `View real-time sensor data and history for ${channel?.projectName || 'your channel'}.`,
+    title: data?.channel ? `${data.channel.projectName}` : 'Channel Details',
+    description: `View real-time sensor data and history for ${data?.channel?.projectName || 'your channel'}.`,
   }
 }
 
@@ -37,12 +38,21 @@ export default async function ChannelDetailPage({ params }: Props) {
         return null;
     }
 
-    const channel = await getChannelById(params.channelId, session.token);
+    const data = await getChannelPageData(params.channelId, session.token);
 
-    if (!channel) {
+    if (!data?.channel) {
         notFound();
         return null;
     }
 
-    return <ChannelDetailClient channel={channel} />;
+    const { channel, history, stats, latestData } = data;
+
+    return (
+        <ChannelDetailClient 
+            channel={channel} 
+            initialHistory={history}
+            initialStats={stats}
+            initialLatestData={latestData}
+        />
+    );
 }
