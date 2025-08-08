@@ -10,11 +10,12 @@ import { ChannelCard } from '@/app/(app)/channel/_components/channel-card';
 import { PlusCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Channel Management',
-  description: 'Create, view, and manage all of your IoT data channels. Get API keys and integration details for each channel.',
-};
-
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Channel Management',
+    description: 'Create, view, and manage all of your IoT data channels. Get API keys and integration details for each channel.',
+  };
+}
 
 export default async function ChannelsPage() {
   const session = await getSession();
