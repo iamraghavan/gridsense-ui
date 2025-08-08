@@ -6,11 +6,12 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import type { Channel, ChannelHistory } from '@/types';
 import { useSocket } from '@/hooks/use-socket';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Rss, Clock, Hash, Thermometer, Droplets } from 'lucide-react';
 import Link from 'next/link';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // Helper to get a consistent color from a string
 const stringToColor = (str: string) => {
@@ -36,6 +37,8 @@ const getFieldColor = (fieldName: string, index: number) => {
 export function ChannelDetailClient({ channel }: { channel: Channel }) {
     const [history, setHistory] = useState<ChannelHistory[]>(channel.history || []);
     const [selectedField, setSelectedField] = useState<string>(channel.fields[0]?.name || 'all');
+    const [latestData, setLatestData] = useState<Record<string, number> | undefined>(channel.latestData);
+    const [lastUpdate, setLastUpdate] = useState<string | undefined>(channel.lastUpdate);
     
     const { socket } = useSocket(channel.userId);
 
@@ -45,9 +48,10 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
                 if (newHistoryEntry.channelId === channel.channel_id) {
                      setHistory(prevHistory => {
                         const newHistory = [...prevHistory, newHistoryEntry];
-                         // Keep the history size manageable, e.g., last 100 entries
-                        return newHistory.slice(-100);
+                        return newHistory.slice(-100); // Keep history manageable
                     });
+                    setLatestData(newHistoryEntry.data);
+                    setLastUpdate(newHistoryEntry.createdAt);
                 }
             };
             socket.on('historyUpdate', handleHistoryUpdate);
@@ -80,7 +84,7 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
         : channel.fields.filter(f => f.name === selectedField);
 
     return (
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-6">
              <Link href={`/dashboard/${channel.userId}/channel`} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to All Channels
@@ -159,6 +163,60 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
                     )}
                 </CardContent>
             </Card>
+
+            <div className="grid md:grid-cols-3 gap-6">
+                <Card className="md:col-span-1">
+                    <CardHeader>
+                        <CardTitle>Channel Details</CardTitle>
+                        <CardDescription>Key information about this channel.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm">
+                        <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground flex items-center"><Clock className="mr-2 h-4 w-4" />Created</span>
+                            <span>{format(new Date(channel.createdAt), 'PP')}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground flex items-center"><Rss className="mr-2 h-4 w-4" />Last Update</span>
+                             <span>{lastUpdate ? `${formatDistanceToNow(new Date(lastUpdate))} ago` : 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                           <span className="text-muted-foreground flex items-center"><Hash className="mr-2 h-4 w-4" />Total Entries</span>
+                           <span className="font-semibold">{history.length}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card className="md:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Sensor Fields</CardTitle>
+                         <CardDescription>Latest data from each configured sensor field.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Field Name</TableHead>
+                                    <TableHead>Unit</TableHead>
+                                    <TableHead className="text-right">Latest Value</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                             <TableBody>
+                                {channel.fields.map((field) => (
+                                    <TableRow key={field._id}>
+                                        <TableCell className="font-medium">{field.name}</TableCell>
+                                        <TableCell className="text-muted-foreground">{field.unit}</TableCell>
+                                        <TableCell className="text-right font-mono">
+                                            {latestData && latestData[field.name] !== undefined 
+                                                ? latestData[field.name].toFixed(2)
+                                                : 'N/A'
+                                            }
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
