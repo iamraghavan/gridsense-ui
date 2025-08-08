@@ -1,8 +1,9 @@
+
 'use server';
 
 import { redirect } from 'next/navigation';
 import { setSession, deleteSession, getSession } from '@/lib/auth';
-import { createChannel as createChannelService } from '@/services/channelService';
+import { createChannel as createChannelService, deleteChannel, updateChannel } from '@/services/channelService';
 import type { LoginResponse, User } from '@/types';
 import { revalidatePath } from 'next/cache';
 
@@ -112,3 +113,52 @@ export async function createChannel(formData: {
         return { error: 'An unexpected server error occurred.' };
     }
 }
+
+
+export async function updateChannelAction(channelId: string, formData: {
+    projectName: string;
+    description: string;
+    fields: { name: string; unit: string }[];
+}) {
+    const session = await getSession();
+    if (!session?.token || !session?.user) {
+        return { error: 'Authentication required.' };
+    }
+
+    try {
+        const response = await updateChannel(channelId, formData, session.token);
+        if (response.success) {
+            revalidatePath(`/dashboard/${session.user._id}/channel`);
+            revalidatePath(`/dashboard/${session.user._id}/channel/${channelId}`);
+            revalidatePath(`/dashboard/${session.user._id}/channel/${channelId}/edit`);
+            return { success: true, channel: response.channel };
+        } else {
+            return { error: response.message || 'Failed to update channel.' };
+        }
+    } catch (error) {
+        console.error('Update channel action error:', error);
+        return { error: 'An unexpected server error occurred.' };
+    }
+}
+
+export async function deleteChannelAction(channelId: string) {
+    const session = await getSession();
+    if (!session?.token || !session?.user) {
+        return { error: 'Authentication required.' };
+    }
+
+    try {
+        const response = await deleteChannel(channelId, session.token);
+        if (response.success) {
+            revalidatePath(`/dashboard/${session.user._id}/channel`);
+            return { success: true };
+        } else {
+            return { error: response.message || 'Failed to delete channel.' };
+        }
+    } catch (error) {
+        console.error('Delete channel action error:', error);
+        return { error: 'An unexpected server error occurred.' };
+    }
+}
+
+    

@@ -1,3 +1,4 @@
+
 'use server';
 import { API_URL } from '@/lib/constants';
 import type { Channel } from '@/types';
@@ -80,7 +81,6 @@ export async function getChannelById(channelId: string, token: string): Promise<
   }
 
   try {
-    // Corrected typo from API_OURL to API_URL
     const response = await fetch(`${API_URL}/channels/${channelId}`, {
       method: 'GET',
       headers: {
@@ -108,3 +108,58 @@ export async function getChannelById(channelId: string, token: string): Promise<
     return null;
   }
 }
+
+export async function updateChannel(
+  channelId: string,
+  channelData: {
+    projectName: string;
+    description: string;
+    fields: { name: string; unit: string }[];
+  },
+  token: string
+) {
+    try {
+        const response = await fetch(`${API_URL}/channels/${channelId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(channelData),
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+            return { success: false, message: result.message || 'An error occurred during update' };
+        }
+        return { success: true, channel: result };
+    } catch (error) {
+        console.error('updateChannel service error:', error);
+        return { success: false, message: 'An unexpected server error occurred.' };
+    }
+}
+
+export async function deleteChannel(channelId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/channels/${channelId}`, {
+            method: 'DELETE',
+            headers: {
+                'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (response.status === 204 || response.ok) {
+            return { success: true };
+        } else {
+             const result = await response.json().catch(() => ({}));
+            return { success: false, message: result.message || 'Failed to delete channel' };
+        }
+    } catch (error) {
+        console.error('deleteChannel service error:', error);
+        return { success: false, message: 'An unexpected server error occurred.' };
+    }
+}
+
+    
