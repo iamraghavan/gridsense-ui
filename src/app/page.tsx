@@ -1,3 +1,9 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'RSensorGrid: Your Real-Time IoT Data Visualization Platform',
+  description: 'Welcome to RSensorGrid. Start building your IoT application with our powerful and easy-to-use data visualization and management tools.',
+};
 
 export default function Home() {
   return (

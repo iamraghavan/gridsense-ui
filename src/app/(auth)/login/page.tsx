@@ -28,6 +28,7 @@ export default function LoginPage() {
   const [state, formAction] = useActionState(login, null);
 
   useEffect(() => {
+    document.title = "Login | RSensorGrid";
     if (state?.success && state.user) {
       toast({
         title: 'Login successful',

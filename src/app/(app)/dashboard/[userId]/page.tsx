@@ -6,6 +6,12 @@ import { getDashboardOverview } from '@/services/statsService';
 import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { DashboardClient } from './_components/dashboard-client';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+  description: 'Your personal dashboard for managing and monitoring all your IoT channels and sensor data.',
+};
 
 // This is the main page component. It's a Server Component.
 // It fetches all necessary data on the server and then passes it

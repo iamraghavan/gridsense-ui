@@ -35,6 +35,10 @@ export default function CreateChannelPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  React.useEffect(() => {
+    document.title = "Create New Channel | RSensorGrid";
+  }, []);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
