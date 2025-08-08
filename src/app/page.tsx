@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
@@ -33,6 +34,30 @@ const features = [
   },
 ];
 
+const team = [
+    {
+        name: 'John Doe',
+        role: 'CEO & Founder',
+        bio: 'The visionary leader behind MERKE Cloud, driving the mission to simplify IoT for everyone.',
+        imageUrl: 'https://placehold.co/400x400.png',
+        aiHint: 'portrait man',
+    },
+    {
+        name: 'Jane Smith',
+        role: 'Lead Backend Engineer',
+        bio: 'The architect of our robust and scalable infrastructure, ensuring your data is always safe and accessible.',
+        imageUrl: 'https://placehold.co/400x400.png',
+        aiHint: 'portrait woman',
+    },
+    {
+        name: 'Alex Johnson',
+        role: 'Lead Frontend Developer',
+        bio: 'The creative mind behind our intuitive user interface, making complex data visualization feel effortless.',
+        imageUrl: 'https://placehold.co/400x400.png',
+        aiHint: 'portrait person',
+    },
+];
+
 function Header() {
   return (
     <header className="absolute inset-x-0 top-0 z-50">
@@ -49,6 +74,9 @@ function Header() {
           </a>
           <a href="#about" className="text-sm font-semibold leading-6 text-foreground">
             About Us
+          </a>
+           <a href="#team" className="text-sm font-semibold leading-6 text-foreground">
+            Our Team
           </a>
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end gap-x-4">
@@ -92,9 +120,70 @@ function HeroSection() {
     )
 }
 
+function AboutSection() {
+    return (
+        <div id="about" className="py-24 sm:py-32 bg-card border-t border-b">
+            <div className="container mx-auto px-6 lg:px-8">
+                <div className="mx-auto grid max-w-2xl grid-cols-1 items-start gap-x-8 gap-y-16 sm:gap-y-24 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+                    <div>
+                        <div className="text-base leading-7 text-muted-foreground lg:max-w-lg">
+                            <p className="text-base font-semibold leading-7 text-primary">About MERKE Cloud</p>
+                            <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                                Built for Developers & Innovators
+                            </h1>
+                            <div className="max-w-xl">
+                                <p className="mt-6">
+                                    At MERKE Cloud, we believe that the power of IoT should be accessible to everyone, from individual hobbyists to large-scale enterprises. Our mission is to provide a robust, scalable, and user-friendly platform that removes the complexity of IoT data management.
+                                </p>
+                                <p className="mt-8">
+                                    We handle the infrastructure—secure data ingestion, real-time processing, and reliable storage—so you can focus on what truly matters: building innovative products and gaining valuable insights from your data.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                     <div className="lg:pr-4">
+                        <div className="relative overflow-hidden rounded-3xl bg-muted px-6 pb-9 pt-64 shadow-2xl sm:px-12 lg:px-8 lg:pb-8 xl:px-10 xl:pb-10">
+                            <img className="absolute inset-0 h-full w-full object-cover" src="https://placehold.co/1000x800.png" alt="" data-ai-hint="abstract technology" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function TeamSection() {
+    return (
+        <div id="team" className="py-24 sm:py-32">
+            <div className="container mx-auto px-6 lg:px-8">
+                 <div className="mx-auto max-w-2xl lg:text-center">
+                    <p className="text-base font-semibold leading-7 text-primary">Our Team</p>
+                    <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                        The People Behind the Platform
+                    </h1>
+                     <p className="mt-6 text-lg leading-8 text-muted-foreground">
+                       Meet the passionate individuals who are dedicated to making MERKE Cloud the best IoT platform for developers.
+                    </p>
+                </div>
+                <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-20 sm:grid-cols-2 lg:mx-0 lg:max-w-5xl lg:grid-cols-3">
+                    {team.map((person) => (
+                        <div key={person.name} className="flex flex-col items-center text-center">
+                            <img className="h-48 w-48 rounded-full object-cover shadow-lg" src={person.imageUrl} alt={person.name} data-ai-hint={person.aiHint} />
+                            <h3 className="mt-6 text-xl font-semibold leading-7 tracking-tight text-foreground">{person.name}</h3>
+                            <p className="text-sm font-semibold leading-6 text-primary">{person.role}</p>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">{person.bio}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+
 function FeaturesSection() {
   return (
-    <div id="features" className="py-24 sm:py-32">
+    <div id="features" className="py-24 sm:py-32 bg-card border-t border-b">
       <div className="container mx-auto px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
           <h2 className="text-base font-semibold leading-7 text-primary">Your Data, Your Rules</h2>
@@ -125,42 +214,11 @@ function FeaturesSection() {
   );
 }
 
-function AboutSection() {
-    return (
-        <div id="about" className="py-24 sm:py-32 bg-card border-t border-b">
-            <div className="container mx-auto px-6 lg:px-8">
-                <div className="mx-auto grid max-w-2xl grid-cols-1 items-start gap-x-8 gap-y-16 sm:gap-y-24 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-                    <div>
-                        <div className="text-base leading-7 text-muted-foreground lg:max-w-lg">
-                            <p className="text-base font-semibold leading-7 text-primary">About Us</p>
-                            <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                                Built for Developers & Innovators
-                            </h1>
-                            <div className="max-w-xl">
-                                <p className="mt-6">
-                                    At MERKE Cloud, we believe that the power of IoT should be accessible to everyone, from individual hobbyists to large-scale enterprises. Our mission is to provide a robust, scalable, and user-friendly platform that removes the complexity of IoT data management.
-                                </p>
-                                <p className="mt-8">
-                                    We handle the infrastructure—secure data ingestion, real-time processing, and reliable storage—so you can focus on what truly matters: building innovative products and gaining valuable insights from your data.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                     <div className="lg:pr-4">
-                        <div className="relative overflow-hidden rounded-3xl bg-muted px-6 pb-9 pt-64 shadow-2xl sm:px-12 lg:px-8 lg:pb-8 xl:px-10 xl:pb-10">
-                            <img className="absolute inset-0 h-full w-full object-cover" src="https://placehold.co/1000x800.png" alt="" data-ai-hint="abstract technology" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
 
 function Footer() {
     const currentYear = new Date().getFullYear();
-    const leftLinks = ['API Docs', 'Terms and Condition', 'Privacy Notice', 'Site Terms', 'Cookie Policy'];
-    const rightLinks = ['Security', 'Accessibility', 'Support', 'Sitemap'];
+    const leftLinks = ['Terms and Condition', 'Privacy Notice', 'Site Terms', 'Cookie Policy'];
+    const rightLinks = ['API Docs', 'Security', 'Accessibility', 'Support', 'Sitemap'];
 
     return (
          <footer className="bg-card border-t">
@@ -176,9 +234,6 @@ function Footer() {
                         {rightLinks.map(link => <Link key={link} href="#" className="hover:text-primary">{link}</Link>)}
                     </div>
                 </div>
-                 <div className="mt-4 text-center text-xs text-muted-foreground/50">
-                    <p>Do Not Share My Personal Information</p>
-                </div>
             </div>
         </footer>
     )
@@ -191,6 +246,7 @@ export default function Home() {
       <main>
         <HeroSection />
         <AboutSection />
+        <TeamSection />
         <FeaturesSection />
       </main>
       <Footer />
