@@ -38,6 +38,8 @@ const getFieldColor = (fieldName: string, index: number) => {
 export function ChannelDetailClient({ channel }: { channel: Channel }) {
     const [history, setHistory] = useState<ChannelHistory[]>(channel.history || []);
     const [selectedField, setSelectedField] = useState<string>(channel.fields[0]?.name || 'all');
+    
+    // Initialize state with data from the channel prop to avoid "N/A" on load.
     const [latestData, setLatestData] = useState<Record<string, number> | undefined>(channel.latestData);
     const [lastUpdate, setLastUpdate] = useState<string | undefined>(channel.lastUpdate);
     
@@ -49,7 +51,8 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
                 if (newHistoryEntry.channelId === channel.channel_id) {
                      setHistory(prevHistory => {
                         const newHistory = [...prevHistory, newHistoryEntry];
-                        return newHistory.slice(-100); // Keep history manageable
+                        // Keep client-side history manageable, e.g., last 100 entries
+                        return newHistory.slice(-100); 
                     });
                     setLatestData(newHistoryEntry.data);
                     setLastUpdate(newHistoryEntry.createdAt);
@@ -221,3 +224,4 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
         </div>
     );
 }
+

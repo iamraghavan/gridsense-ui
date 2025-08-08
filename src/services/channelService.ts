@@ -81,7 +81,8 @@ export async function getChannelById(channelId: string, token: string): Promise<
   }
 
   try {
-    const response = await fetch(`${API_URL}/channels/${channelId}`, {
+    // Append `history=all` to fetch the complete history for the channel detail page.
+    const response = await fetch(`${API_URL}/channels/${channelId}?history=all`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
