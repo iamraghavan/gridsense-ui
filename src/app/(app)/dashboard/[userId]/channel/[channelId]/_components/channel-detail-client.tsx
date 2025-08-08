@@ -59,24 +59,33 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
     const [selectedField, setSelectedField] = useState<string>(channel.fields[0]?.name || 'all');
     const [timeRange, setTimeRange] = useState<TimeRange>('all');
     
-    const { socket } = useSocket(channel.userId);
+    const { socket } = useSocket(channel.userId, channel.channel_id);
 
     useEffect(() => {
         if (socket) {
-            const handleHistoryUpdate = (newHistoryEntry: ChannelHistory) => {
-                if (newHistoryEntry.channelId === channel.channel_id) {
-                     setHistory(prevHistory => [...prevHistory, newHistoryEntry]);
-                     setLatestData(newHistoryEntry.data);
-                     setStats(prevStats => ({
-                         ...prevStats!,
-                         totalEntries: (prevStats?.totalEntries ?? 0) + 1,
-                         lastUpdate: newHistoryEntry.createdAt,
-                     }));
+            const handleSensorUpdate = (update: { channelId: string; timestamp: string; data: Record<string, number>, entryId: string }) => {
+                if (update.channelId === channel.channel_id) {
+                    const newHistoryEntry: ChannelHistory = {
+                        _id: update.entryId, // Assuming backend sends this
+                        channelId: update.channelId,
+                        createdAt: update.timestamp,
+                        data: update.data,
+                    };
+                    
+                    // Update all states together
+                    setHistory(prevHistory => [...prevHistory, newHistoryEntry]);
+                    setLatestData(newHistoryEntry.data);
+                    setStats(prevStats => ({
+                        ...prevStats!,
+                        totalEntries: (prevStats?.totalEntries ?? 0) + 1,
+                        lastUpdate: newHistoryEntry.createdAt,
+                    }));
                 }
             };
-            socket.on('historyUpdate', handleHistoryUpdate);
+            socket.on('sensor:update', handleSensorUpdate);
+            
             return () => {
-                socket.off('historyUpdate', handleHistoryUpdate);
+                socket.off('sensor:update', handleSensorUpdate);
             };
         }
     }, [socket, channel.channel_id]);

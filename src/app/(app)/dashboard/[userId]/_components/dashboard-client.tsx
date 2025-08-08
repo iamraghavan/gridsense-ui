@@ -50,28 +50,37 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
   useEffect(() => {
     if (!socket) return;
     
-    const handleLatestData = (data: { channelId: string; lastUpdate: string }) => {
+    // This handles live updates for the "Last Update" column on the dashboard
+    const handleSensorUpdate = (data: { channelId: string; timestamp: string }) => {
         setChannels(prevChannels =>
             prevChannels.map(channel =>
                 channel.channel_id === data.channelId
-                    ? { ...channel, lastUpdate: data.lastUpdate }
+                    ? { ...channel, lastUpdate: data.timestamp }
                     : channel
             )
         );
-    };
-     
-    const handleStatsUpdate = (newStats: ChannelStats) => {
-        setStats(newStats);
+        // Also update the total requests count if it's part of the stats
+        setStats(prevStats => ({
+            ...prevStats!,
+            totalRequests: (prevStats?.totalRequests ?? 0) + 1,
+        }));
     };
 
-    socket.on('latestData', handleLatestData);
-    socket.on('statsUpdate', handleStatsUpdate);
+    socket.on('sensor:update', handleSensorUpdate);
+
+    // Subscribe to updates for visible channels
+    channels.slice(0, 5).forEach(channel => {
+        socket.emit('subscribe', channel.channel_id);
+    });
 
     return () => {
-        socket.off('latestData', handleLatestData);
-        socket.off('statsUpdate', handleStatsUpdate);
+        socket.off('sensor:update', handleSensorUpdate);
+        // Unsubscribe when component unmounts
+        channels.slice(0, 5).forEach(channel => {
+            socket.emit('unsubscribe', channel.channel_id);
+        });
     };
-  }, [socket]);
+  }, [socket, channels]);
   
   return (
     <div className="flex-1 space-y-4 pt-6">
