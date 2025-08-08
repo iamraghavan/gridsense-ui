@@ -143,7 +143,7 @@ function AboutSection() {
                     </div>
                      <div className="lg:pr-4">
                         <div className="relative overflow-hidden rounded-3xl bg-muted px-6 pb-9 pt-64 shadow-2xl sm:px-12 lg:px-8 lg:pb-8 xl:px-10 xl:pb-10">
-                            <img className="absolute inset-0 h-full w-full object-cover" src="https://placehold.co/1000x800.png" alt="" data-ai-hint="abstract technology" />
+                            <img className="absolute inset-0 h-full w-full object-cover" src="https://storage.googleapis.com/aai-web-samples/merke-about-us.jpg" alt="" data-ai-hint="smart home" />
                         </div>
                     </div>
                 </div>
