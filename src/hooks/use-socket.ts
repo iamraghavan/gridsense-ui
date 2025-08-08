@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 
-const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
+const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "https://node-sensor-gird.onrender.com";
 
 export const useSocket = (userId?: string) => {
   const [socket, setSocket] = useState<Socket | null>(null);

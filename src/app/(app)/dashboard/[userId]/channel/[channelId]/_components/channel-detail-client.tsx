@@ -84,7 +84,7 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
         : channel.fields.filter(f => f.name === selectedField);
 
     return (
-        <div className="flex-1 space-y-6">
+        <div className="flex-1 space-y-6 pt-6">
              <Link href={`/dashboard/${channel.userId}/channel`} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to All Channels
