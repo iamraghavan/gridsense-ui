@@ -7,13 +7,14 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import type { Channel, ChannelHistory, ChannelStats } from '@/types';
 import { useSocket } from '@/hooks/use-socket';
 import { ArrowLeft, Clock, Hash, Rss } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RelativeTime } from './relative-time';
+import { Button } from '@/components/ui/button';
 
 // Helper to get a consistent color from a string
 const stringToColor = (str: string) => {
@@ -35,6 +36,15 @@ const getFieldColor = (fieldName: string, index: number) => {
     return chartColors[index % chartColors.length] || stringToColor(fieldName);
 };
 
+type TimeRange = '1d' | '7d' | '30d' | 'all';
+
+const timeRanges: { value: TimeRange; label: string }[] = [
+    { value: '1d', label: '1D' },
+    { value: '7d', label: '7D' },
+    { value: '30d', label: '1M' },
+    { value: 'all', label: 'All' },
+];
+
 interface ChannelDetailClientProps {
     channel: Channel;
     initialHistory: ChannelHistory[];
@@ -47,6 +57,7 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
     const [stats, setStats] = useState<ChannelStats | null>(initialStats);
     const [latestData, setLatestData] = useState<Record<string, number> | undefined>(initialLatestData?.data);
     const [selectedField, setSelectedField] = useState<string>(channel.fields[0]?.name || 'all');
+    const [timeRange, setTimeRange] = useState<TimeRange>('all');
     
     const { socket } = useSocket(channel.userId);
 
@@ -54,7 +65,7 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
         if (socket) {
             const handleHistoryUpdate = (newHistoryEntry: ChannelHistory) => {
                 if (newHistoryEntry.channelId === channel.channel_id) {
-                     setHistory(prevHistory => [...prevHistory, newHistoryEntry].slice(-100)); // Keep last 100 entries
+                     setHistory(prevHistory => [...prevHistory, newHistoryEntry]);
                      setLatestData(newHistoryEntry.data);
                      setStats(prevStats => ({
                          ...prevStats!,
@@ -70,11 +81,29 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
         }
     }, [socket, channel.channel_id]);
 
+    const filteredHistory = useMemo(() => {
+        const now = new Date();
+        if (timeRange === 'all') {
+            return history;
+        }
+        let startDate: Date;
+        if (timeRange === '1d') {
+            startDate = subDays(now, 1);
+        } else if (timeRange === '7d') {
+            startDate = subDays(now, 7);
+        } else if (timeRange === '30d') {
+            startDate = subDays(now, 30);
+        } else {
+             return history;
+        }
+        return history.filter(entry => new Date(entry.createdAt) >= startDate);
+    }, [history, timeRange]);
+
     const chartData = useMemo(() => 
-        history.map(entry => ({
+        filteredHistory.map(entry => ({
             ...entry.data,
-            time: format(new Date(entry.createdAt), 'HH:mm:ss'),
-        })), [history]
+            time: format(new Date(entry.createdAt), 'HH:mm'),
+        })), [filteredHistory]
     );
 
     const chartConfig = useMemo(() => {
@@ -116,9 +145,9 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
                              <p className="text-sm font-medium">Total Entries</p>
                              <p className="text-2xl font-bold">{totalEntries}</p>
                            </div>
-                           <div className="w-48">
+                           <div className="flex flex-col gap-2">
                                 <Select value={selectedField} onValueChange={setSelectedField}>
-                                <SelectTrigger>
+                                <SelectTrigger className='w-48'>
                                     <SelectValue placeholder="Select a field to display" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -128,6 +157,19 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
                                     ))}
                                 </SelectContent>
                                 </Select>
+                                <div className="flex items-center justify-end gap-1">
+                                    {timeRanges.map(range => (
+                                        <Button
+                                            key={range.value}
+                                            variant={timeRange === range.value ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => setTimeRange(range.value)}
+                                            className="px-3"
+                                        >
+                                            {range.label}
+                                        </Button>
+                                    ))}
+                                </div>
                            </div>
                         </div>
                     </div>
