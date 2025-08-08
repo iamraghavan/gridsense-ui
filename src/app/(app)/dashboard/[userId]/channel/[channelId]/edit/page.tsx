@@ -278,5 +278,3 @@ export default function EditChannelPage() {
     </div>
   );
 }
-
-    

@@ -205,5 +205,3 @@ export function ChannelCard({ channel, apiKey }: { channel: Channel; apiKey: str
     </Card>
   );
 }
-
-    
