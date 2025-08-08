@@ -28,18 +28,15 @@ export async function middleware(request: NextRequest) {
 
   // Allow access to dashboard pages
   if (pathname.startsWith('/dashboard')) {
+    // If the user is trying to access a dashboard that is not their own, redirect them
+    const userId = session.user?._id;
+    if (userId && pathname.startsWith(`/dashboard/`) && !pathname.startsWith(`/dashboard/${userId}`)) {
+        // extract the path after the user id
+        const path = pathname.split('/').slice(3).join('/');
+        return NextResponse.redirect(new URL(`/dashboard/${userId}/${path}`, request.url));
+    }
     return NextResponse.next();
   }
-
-  // Redirect root channel paths to be nested under user dashboard
-  if (pathname.startsWith('/channel')) {
-      const userId = session.user?._id;
-      if (userId) {
-          const newPath = pathname.replace('/channel', `/dashboard/${userId}/channel`);
-          return NextResponse.redirect(new URL(newPath, request.url));
-      }
-  }
-
 
   return NextResponse.next();
 }

@@ -38,7 +38,7 @@ export default async function ChannelsPage({ params }: { params: { userId: strin
         </div>
         <div className="flex items-center space-x-2">
           <Button asChild>
-            <Link href="/channel/create">
+            <Link href={`/dashboard/${params.userId}/channel/create`}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Create New Channel
             </Link>
@@ -61,7 +61,7 @@ export default async function ChannelsPage({ params }: { params: { userId: strin
             Get started by creating your first data channel.
           </p>
           <Button asChild>
-            <Link href="/channel/create">
+            <Link href={`/dashboard/${params.userId}/channel/create`}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Create Channel
             </Link>

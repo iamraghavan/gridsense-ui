@@ -3,7 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Metadata } from 'next';
 
 const fieldSchema = z.object({
   name: z.string().min(1, 'Field name is required.'),
@@ -32,6 +33,9 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function CreateChannelPage() {
   const router = useRouter();
+  const params = useParams();
+  const userId = params.userId as string;
+
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -62,7 +66,7 @@ export default function CreateChannelPage() {
           title: 'Channel Created Successfully',
           description: `The channel "${values.projectName}" has been created.`,
         });
-        router.push('/channel');
+        router.push(`/dashboard/${userId}/channel`);
       } else {
         toast({
           variant: 'destructive',
@@ -83,7 +87,7 @@ export default function CreateChannelPage() {
 
   return (
     <div className="flex-1 space-y-4 pt-6">
-       <Link href="/channel" className="flex items-center text-sm text-muted-foreground hover:text-foreground">
+       <Link href={`/dashboard/${userId}/channel`} className="flex items-center text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Channels
         </Link>
