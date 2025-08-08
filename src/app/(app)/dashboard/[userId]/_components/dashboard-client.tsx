@@ -36,7 +36,7 @@ interface DashboardClientProps {
 export function DashboardClient({ user, initialStats, initialChannels }: DashboardClientProps) {
   const [stats, setStats] = useState<ChannelStats | null>(initialStats);
   const [channels, setChannels] = useState<Channel[]>(initialChannels);
-  const [isLoading, setIsLoading] = useState(!initialStats || !initialChannels);
+  const [isLoading, setIsLoading] = useState(!initialStats || initialChannels.length === 0);
   
   const { socket } = useSocket(user?._id);
   

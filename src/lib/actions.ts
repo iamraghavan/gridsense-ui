@@ -160,5 +160,3 @@ export async function deleteChannelAction(channelId: string) {
         return { error: 'An unexpected server error occurred.' };
     }
 }
-
-    

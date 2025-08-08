@@ -34,6 +34,7 @@ export interface Channel {
     updatedAt: string;
     __v: number;
     history?: ChannelHistory[]; // This might be paginated, so don't rely on it for counts/latest
+    lastUpdate?: string; // For dashboard view
 }
 
 export interface ChannelStats {
