@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getChannelById } from '@/services/channelService';
 import { notFound } from 'next/navigation';
-import { ChannelDetailClient } from '@/app/(app)/channel/[channelId]/_components/channel-detail-client';
+import { ChannelDetailClient } from './_components/channel-detail-client';
 import type { Metadata, ResolvingMetadata } from 'next';
 
 type Props = {
