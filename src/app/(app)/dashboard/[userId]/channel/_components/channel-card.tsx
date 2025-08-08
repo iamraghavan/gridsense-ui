@@ -150,7 +150,7 @@ export function ChannelCard({ channel, apiKey }: { channel: Channel; apiKey: str
           </DialogTrigger>
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>API Documentation</DialogTitle>
+              <DialogTitle>API Documentation: {channel.projectName}</DialogTitle>
               <DialogDescription>
                 Send sensor data to this channel using a POST request. The channel ID is part of the URL.
               </DialogDescription>

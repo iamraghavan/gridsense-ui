@@ -75,6 +75,7 @@ export function ApiKeyClient({ apiKey }: { apiKey: string }) {
                 <CardHeader>
                     <CardTitle>API Endpoints</CardTitle>
                     <CardDescription>
+                        The base URL for all API endpoints is: <code className='font-mono bg-muted px-1 py-0.5 rounded-sm'>{API_URL_BASE}</code>.
                         All API requests must include the <code className='font-mono bg-muted px-1 py-0.5 rounded-sm'>x-api-key</code> header with your API key.
                     </CardDescription>
                 </CardHeader>
