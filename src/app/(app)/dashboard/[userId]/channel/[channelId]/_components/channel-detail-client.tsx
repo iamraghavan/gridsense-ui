@@ -7,12 +7,13 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import type { Channel, ChannelHistory, ChannelStats } from '@/types';
 import { useSocket } from '@/hooks/use-socket';
 import { ArrowLeft, Clock, Hash, Rss } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { RelativeTime } from './relative-time';
 
 // Helper to get a consistent color from a string
 const stringToColor = (str: string) => {
@@ -53,7 +54,7 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
         if (socket) {
             const handleHistoryUpdate = (newHistoryEntry: ChannelHistory) => {
                 if (newHistoryEntry.channelId === channel.channel_id) {
-                     setHistory(prevHistory => [...prevHistory, newHistoryEntry]);
+                     setHistory(prevHistory => [...prevHistory, newHistoryEntry].slice(-100)); // Keep last 100 entries
                      setLatestData(newHistoryEntry.data);
                      setStats(prevStats => ({
                          ...prevStats!,
@@ -188,7 +189,7 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground flex items-center"><Rss className="mr-2 h-4 w-4" />Last Update</span>
-                             <span>{lastUpdate ? `${formatDistanceToNow(new Date(lastUpdate))} ago` : 'N/A'}</span>
+                             <span><RelativeTime date={lastUpdate} /></span>
                         </div>
                         <div className="flex items-center justify-between">
                            <span className="text-muted-foreground flex items-center"><Hash className="mr-2 h-4 w-4" />Total Entries</span>
