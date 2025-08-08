@@ -49,11 +49,7 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
         if (socket) {
             const handleHistoryUpdate = (newHistoryEntry: ChannelHistory) => {
                 if (newHistoryEntry.channelId === channel.channel_id) {
-                     setHistory(prevHistory => {
-                        const newHistory = [...prevHistory, newHistoryEntry];
-                        // Keep client-side history manageable, e.g., last 100 entries
-                        return newHistory.slice(-100); 
-                    });
+                     setHistory(prevHistory => [...prevHistory, newHistoryEntry]);
                     setLatestData(newHistoryEntry.data);
                     setLastUpdate(newHistoryEntry.createdAt);
                 }
@@ -224,4 +220,3 @@ export function ChannelDetailClient({ channel }: { channel: Channel }) {
         </div>
     );
 }
-

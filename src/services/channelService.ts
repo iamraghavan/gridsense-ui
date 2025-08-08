@@ -81,8 +81,7 @@ export async function getChannelById(channelId: string, token: string): Promise<
   }
 
   try {
-    // Append `history=all` to fetch the complete history for the channel detail page.
-    const response = await fetch(`${API_URL}/channels/${channelId}?history=all`, {
+    const response = await fetch(`${API_URL}/channels/${channelId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -162,5 +161,3 @@ export async function deleteChannel(channelId: string, token: string) {
         return { success: false, message: 'An unexpected server error occurred.' };
     }
 }
-
-    
