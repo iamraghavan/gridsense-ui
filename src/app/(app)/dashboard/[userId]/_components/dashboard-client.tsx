@@ -32,7 +32,19 @@ function ChannelLastUpdate({ lastUpdate }: { lastUpdate?: string }) {
 
     useEffect(() => {
         if (lastUpdate) {
-            setFormattedDate(format(new Date(lastUpdate), 'PPpp'));
+            try {
+                // Check if lastUpdate is a valid date string before formatting
+                const date = new Date(lastUpdate);
+                if (!isNaN(date.getTime())) {
+                    setFormattedDate(format(date, 'PPpp'));
+                } else {
+                    setFormattedDate('Invalid date');
+                }
+            } catch (error) {
+                setFormattedDate('Invalid date');
+            }
+        } else {
+            setFormattedDate(null);
         }
     }, [lastUpdate]);
 
@@ -56,30 +68,40 @@ interface DashboardClientProps {
 export function DashboardClient({ user, initialStats, initialChannels }: DashboardClientProps) {
   const [stats, setStats] = useState<ChannelStats | null>(initialStats);
   const [channels, setChannels] = useState<Channel[]>(initialChannels);
-  const [isLoading, setIsLoading] = useState(!initialStats && !initialChannels);
+  const [isLoading, setIsLoading] = useState(!initialStats || !initialChannels);
   
   const { socket } = useSocket(user?._id);
+  
+  useEffect(() => {
+      if (initialStats && initialChannels) {
+          setIsLoading(false);
+      }
+  }, [initialStats, initialChannels]);
+
 
   useEffect(() => {
     if (!socket) return;
     
-    socket.on('latestData', (data: { channelId: string; latestData: Record<string, number>, lastUpdate: string }) => {
+    const handleLatestData = (data: { channelId: string; lastUpdate: string }) => {
         setChannels(prevChannels =>
             prevChannels.map(channel =>
                 channel.channel_id === data.channelId
-                    ? { ...channel, latestData: data.latestData, lastUpdate: data.lastUpdate }
+                    ? { ...channel, lastUpdate: data.lastUpdate }
                     : channel
             )
         );
-    });
+    };
      
-    socket.on('statsUpdate', (newStats: ChannelStats) => {
+    const handleStatsUpdate = (newStats: ChannelStats) => {
         setStats(newStats);
-    });
+    };
+
+    socket.on('latestData', handleLatestData);
+    socket.on('statsUpdate', handleStatsUpdate);
 
     return () => {
-        socket.off('latestData');
-        socket.off('statsUpdate');
+        socket.off('latestData', handleLatestData);
+        socket.off('statsUpdate', handleStatsUpdate);
     };
   }, [socket]);
   
@@ -127,15 +149,15 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                                 <TableRow key={i}>
                                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                     <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-48" /></TableCell>
-                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell className="text-right"><Skeleton className="h-8 w-16" /></TableCell>
+                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                                    <TableCell className="text-right"><Skeleton className="h-8 w-20" /></TableCell>
                                 </TableRow>
                             ))
                         ) : channels.length > 0 ? (
                             channels.slice(0, 5).map((channel) => (
                                 <TableRow key={channel._id}>
                                     <TableCell className="font-medium">{channel.projectName}</TableCell>
-                                    <TableCell className="hidden md:table-cell text-muted-foreground">{channel.description}</TableCell>
+                                    <TableCell className="hidden md:table-cell text-muted-foreground truncate max-w-xs">{channel.description}</TableCell>
                                     <TableCell className="hidden md:table-cell text-muted-foreground">
                                        <ChannelLastUpdate lastUpdate={channel.lastUpdate} />
                                     </TableCell>
@@ -148,7 +170,7 @@ export function DashboardClient({ user, initialStats, initialChannels }: Dashboa
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center">
+                                <TableCell colSpan={4} className="h-24 text-center">
                                     No channels found.
                                 </TableCell>
                             </TableRow>

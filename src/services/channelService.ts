@@ -7,6 +7,7 @@ interface ChannelsResponse {
   channels: Channel[];
 }
 
+// Lightweight version to get all channels without full history for faster page loads
 export async function getChannels(userId: string, token: string): Promise<ChannelsResponse | null> {
   if (!userId || !token) {
     console.error('getChannels: Missing userId or token');
@@ -14,7 +15,7 @@ export async function getChannels(userId: string, token: string): Promise<Channe
   }
 
   try {
-    const response = await fetch(`${API_URL}/channels/user/${userId}`, {
+    const response = await fetch(`${API_URL}/channels/user/${userId}?meta=true`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -79,6 +80,7 @@ export async function getChannelById(channelId: string, token: string): Promise<
   }
 
   try {
+    // Corrected typo from API_OURL to API_URL
     const response = await fetch(`${API_URL}/channels/${channelId}`, {
       method: 'GET',
       headers: {

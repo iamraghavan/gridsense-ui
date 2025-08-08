@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -25,45 +25,43 @@ function processChannelData(channel: Channel): ChartableData {
     channel.history.forEach((entry: ChannelHistory) => {
       Object.entries(entry.data).forEach(([fieldName, value]) => {
         const fieldConfig = channel.fields.find(f => f.name === fieldName);
-        if (fieldConfig && dataByField[fieldConfig.name]) {
-          dataByField[fieldConfig.name].data.push({
-            time: format(parseISO(entry.createdAt), 'MMM d, HH:mm'),
-            value: value,
-          });
+        if (fieldConfig && dataByField[fieldConfig.name] && typeof value === 'number') {
+          try {
+            dataByField[fieldConfig.name].data.push({
+              time: format(parseISO(entry.createdAt), 'MMM d, HH:mm'),
+              value: value,
+            });
+          } catch(e) {
+            // Ignore invalid date formats
+          }
         }
       });
     });
   }
 
   Object.values(dataByField).forEach(field => {
-    field.data.reverse();
+    field.data.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
   });
   
   return dataByField;
 }
 
-
 export function ChannelDetailClient({ channel: initialChannel }: { channel: Channel }) {
   const [channel, setChannel] = useState<Channel>(initialChannel);
-  const [chartableData, setChartableData] = useState<ChartableData>(() => processChannelData(initialChannel));
 
+  const chartableData = useMemo(() => processChannelData(channel), [channel]);
+  
   const { socket } = useSocket(initialChannel.userId);
-
-  useEffect(() => {
-    setChartableData(processChannelData(channel));
-  }, [channel]);
 
   useEffect(() => {
     if (!socket) return;
     
-    // Join a room for this specific channel
     socket.emit('joinChannel', channel.channel_id);
 
     const handleNewData = (newHistoryEntry: ChannelHistory) => {
         if(newHistoryEntry.channelId === channel.channel_id) {
             setChannel(prevChannel => {
                 const newHistory = [...(prevChannel.history || []), newHistoryEntry];
-                // Optional: Limit the history size to prevent memory leaks on long-running pages
                 if (newHistory.length > 200) { 
                     newHistory.shift();
                 }
@@ -124,7 +122,7 @@ export function ChannelDetailClient({ channel: initialChannel }: { channel: Chan
                         data={chartData}
                         margin={{
                             top: 5,
-                            right: 20,
+                            right: 30,
                             left: 0,
                             bottom: 5,
                         }}
@@ -135,7 +133,8 @@ export function ChannelDetailClient({ channel: initialChannel }: { channel: Chan
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
-                        tickFormatter={(value) => value.slice(0, 12)}
+                        tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                        interval="preserveStartEnd"
                       />
                        <YAxis 
                          tickLine={false}
@@ -170,7 +169,7 @@ export function ChannelDetailClient({ channel: initialChannel }: { channel: Chan
                         <AlertTriangle className="h-10 w-10 text-muted-foreground mb-4" />
                         <p className="text-lg font-semibold">No Data Yet</p>
                         <p className="text-sm text-muted-foreground">
-                            This sensor hasn't sent any data.
+                            This sensor hasn't sent any data. Check your device and API configuration.
                         </p>
                     </div>
                 )}
