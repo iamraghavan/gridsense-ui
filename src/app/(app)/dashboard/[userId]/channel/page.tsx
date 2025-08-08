@@ -17,6 +17,7 @@ export default async function ChannelsPage() {
 
   const channelsResponse = await getChannels(session.user._id, session.token);
   const channels = channelsResponse?.channels ?? [];
+  const apiKey = session.user.apiKey;
 
   return (
     <div className="flex-1 space-y-4 pt-6">
@@ -40,7 +41,7 @@ export default async function ChannelsPage() {
       {channels.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {channels.map((channel) => (
-            <ChannelCard key={channel._id} channel={channel} />
+            <ChannelCard key={channel._id} channel={channel} apiKey={apiKey} />
           ))}
         </div>
       ) : (
