@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { getChannels } from '@/services/channelService';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChannelCard } from '@/app/(app)/channel/_components/channel-card';
+import { ChannelCard } from './_components/channel-card';
 import { PlusCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 
@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function ChannelsPage() {
+export default async function ChannelsPage({ params }: { params: { userId: string } }) {
   const session = await getSession();
   if (!session?.user || !session?.token) {
     return redirect('/login');
