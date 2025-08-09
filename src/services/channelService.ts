@@ -75,7 +75,7 @@ export async function createChannel(
 }
 
 // Fetches basic channel details
-async function getChannelById(channelId: string, token: string): Promise<Channel | null> {
+export async function getChannelById(channelId: string, token: string): Promise<Channel | null> {
   const res = await fetch(`${API_URL}/channels/${channelId}`, {
     headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf' },
     cache: 'no-store',
