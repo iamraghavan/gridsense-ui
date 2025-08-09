@@ -2,7 +2,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { setSession, deleteSession, getSession } from '@/lib/auth';
+import { setSession, deleteSession, getSession as getSessionFromCookie } from '@/lib/auth';
 import { createChannel as createChannelService, deleteChannel, updateChannel } from '@/services/channelService';
 import type { LoginResponse, User } from '@/types';
 import { revalidatePath } from 'next/cache';
@@ -103,7 +103,7 @@ export async function createChannel(formData: {
     description: string;
     fields: { name: string; unit: string }[];
 }) {
-    const session = await getSession();
+    const session = await getSessionFromCookie();
     if (!session?.token) {
         return { error: 'You must be logged in to create a channel.' };
     }
@@ -129,7 +129,7 @@ export async function updateChannelAction(channelId: string, formData: {
     description: string;
     fields: { name: string; unit: string }[];
 }) {
-    const session = await getSession();
+    const session = await getSessionFromCookie();
     if (!session?.token || !session?.user) {
         return { error: 'Authentication required.' };
     }
@@ -151,7 +151,7 @@ export async function updateChannelAction(channelId: string, formData: {
 }
 
 export async function deleteChannelAction(channelId: string) {
-    const session = await getSession();
+    const session = await getSessionFromCookie();
     if (!session?.token || !session?.user) {
         return { error: 'Authentication required.' };
     }
@@ -168,4 +168,9 @@ export async function deleteChannelAction(channelId: string) {
         console.error('Delete channel action error:', error);
         return { error: 'An unexpected server error occurred.' };
     }
+}
+
+// Wrapper action to make getSession available on the client
+export async function getSession() {
+    return await getSessionFromCookie();
 }
