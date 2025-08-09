@@ -193,7 +193,7 @@ function AboutSection() {
                     </div>
                      <div className="lg:pr-4">
                         <div className="relative aspect-square overflow-hidden rounded-3xl bg-muted shadow-2xl">
-                            <img className="absolute inset-0 h-full w-full object-cover" src="https://assets.grok.com/anon-users/0148fcfb-c5d0-480a-97fb-d36a58b12f84/generated/3d0809f7-4750-4406-94a2-57bfc8184151/image.jpg" alt="" data-ai-hint="smart home" />
+                            <img className="absolute inset-0 h-full w-full object-cover" src="https://jugyah-dev-property-photos.s3.ap-south-1.amazonaws.com/Screenshot_2024_12_16_143915_40ee63bcab.webp" alt="" data-ai-hint="smart home" />
                         </div>
                     </div>
                 </div>
