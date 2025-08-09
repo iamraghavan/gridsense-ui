@@ -5,7 +5,6 @@ import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { z } from 'zod';
 
 import { register } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
