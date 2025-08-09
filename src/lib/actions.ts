@@ -45,13 +45,16 @@ export async function login(prevState: any, formData: FormData) {
 }
 
 export async function register(prevState: any, formData: FormData) {
-  const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  if (!name || !email || !password) {
-    return { error: 'All fields are required' };
+  if (!email || !password) {
+    return { error: 'Email and password are required' };
   }
+
+  // Use email for name and username to satisfy backend constraints
+  const name = email;
+  const username = email;
 
   try {
     const response = await fetch(`${process.env.API_URL}/auth/register`, {
@@ -60,7 +63,7 @@ export async function register(prevState: any, formData: FormData) {
         'Content-Type': 'application/json',
         'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf'
       },
-      body: JSON.stringify({ name, email, password, role: 'user' }),
+      body: JSON.stringify({ name, username, email, password, role: 'user' }),
     });
 
     const data: LoginResponse = await response.json();
