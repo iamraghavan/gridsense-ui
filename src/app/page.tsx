@@ -2,8 +2,9 @@
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
-import { Cpu, Gauge, Share2, ShieldCheck } from 'lucide-react';
+import { Cpu, Gauge, Menu, Share2, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export const metadata: Metadata = {
   title: 'MERKE Cloud: Your Real-Time IoT Data Visualization Platform',
@@ -59,6 +60,12 @@ const team = [
 ];
 
 function Header() {
+  const navLinks = [
+    { name: 'Features', href: '#features' },
+    { name: 'About Us', href: '#about' },
+    { name: 'Our Team', href: '#team' },
+  ];
+
   return (
     <header className="absolute inset-x-0 top-0 z-50">
       <nav className="container mx-auto flex items-center justify-between p-6 lg:px-8" aria-label="Global">
@@ -69,15 +76,11 @@ function Header() {
           </Link>
         </div>
         <div className="hidden lg:flex lg:gap-x-12">
-           <a href="#features" className="text-sm font-semibold leading-6 text-foreground">
-            Features
-          </a>
-          <a href="#about" className="text-sm font-semibold leading-6 text-foreground">
-            About Us
-          </a>
-           <a href="#team" className="text-sm font-semibold leading-6 text-foreground">
-            Our Team
-          </a>
+          {navLinks.map((link) => (
+            <a key={link.name} href={link.href} className="text-sm font-semibold leading-6 text-foreground">
+              {link.name}
+            </a>
+          ))}
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end gap-x-4">
           <Button asChild variant="ghost">
@@ -87,6 +90,39 @@ function Header() {
             <Link href="/register">Register</Link>
           </Button>
         </div>
+        <div className="flex lg:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Open main menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <div className="flex flex-col gap-6 p-6">
+                <Link href="/" className="flex items-center gap-2">
+                    <Logo className="h-8 w-auto text-primary" />
+                    <span className="text-xl font-bold">MERKE Cloud</span>
+                </Link>
+                <div className="flex flex-col gap-y-4">
+                  {navLinks.map((link) => (
+                    <a key={link.name} href={link.href} className="text-base font-semibold leading-6 text-foreground">
+                      {link.name}
+                    </a>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-y-4 pt-6 border-t">
+                   <Button asChild variant="ghost">
+                      <Link href="/login">Log in</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/register">Register</Link>
+                    </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </nav>
     </header>
   )
@@ -94,27 +130,34 @@ function Header() {
 
 function HeroSection() {
     return (
-        <div className="relative isolate px-6 pt-14 lg:px-8">
-             <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-                <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#3399FF] to-[#6666B2] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style={{clipPath: 'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)'}}></div>
+        <div className="relative isolate overflow-hidden bg-background">
+            <div className="mx-auto max-w-7xl px-6 pb-24 pt-32 sm:pb-32 lg:flex lg:px-8 lg:py-40">
+                <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl lg:flex-shrink-0 lg:pt-8">
+                    <h1 className="mt-10 text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
+                        Real-time IoT data, simplified.
+                    </h1>
+                    <p className="mt-6 text-lg leading-8 text-muted-foreground">
+                        MERKE Cloud provides the tools to securely ingest, manage, and visualize your sensor data in real-time. Focus on your project, not the infrastructure.
+                    </p>
+                    <div className="mt-10 flex items-center gap-x-6">
+                        <Button asChild size="lg">
+                            <Link href="/register">Get Started</Link>
+                        </Button>
+                        <Button asChild variant="link" size="lg">
+                            <Link href="#features">Learn more <span aria-hidden="true">→</span></Link>
+                        </Button>
+                    </div>
+                </div>
+                <div className="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:ml-10 lg:mr-0 lg:mt-0 lg:max-w-none lg:flex-none xl:ml-32">
+                    <div className="max-w-3xl flex-none sm:max-w-5xl lg:max-w-none">
+                        <div className="-m-2 rounded-xl bg-muted/20 p-2 ring-1 ring-inset ring-muted/30 lg:-m-4 lg:rounded-2xl lg:p-4">
+                            <img src="https://placehold.co/1200x800.png" alt="App screenshot" width="2432" height="1442" className="w-[76rem] rounded-md shadow-2xl ring-1 ring-muted/20" data-ai-hint="dashboard analytics" />
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
-                <div className="text-center">
-                <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-                    Real-time IoT data, simplified.
-                </h1>
-                <p className="mt-6 text-lg leading-8 text-muted-foreground">
-                    MERKE Cloud provides the tools to securely ingest, manage, and visualize your sensor data in real-time. Focus on your project, not the infrastructure.
-                </p>
-                <div className="mt-10 flex items-center justify-center gap-x-6">
-                    <Button asChild size="lg">
-                        <Link href="/register">Get Started</Link>
-                    </Button>
-                    <Button asChild variant="link" size="lg">
-                        <Link href="#features">Learn more <span aria-hidden="true">→</span></Link>
-                    </Button>
-                </div>
-                </div>
+             <div className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]" aria-hidden="true">
+                <div className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#3399FF] to-[#6666B2] opacity-30 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]" style={{clipPath: 'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)'}}></div>
             </div>
         </div>
     )
@@ -253,3 +296,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
