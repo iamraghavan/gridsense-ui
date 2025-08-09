@@ -1,10 +1,11 @@
 
+
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { Cpu, Gauge, Menu, Share2, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 export const metadata: Metadata = {
   title: 'MERKE Cloud: Your Real-Time IoT Data Visualization Platform',
@@ -99,6 +100,12 @@ function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Mobile Menu</SheetTitle>
+                  <SheetDescription>
+                    Navigation links for MERKE Cloud.
+                  </SheetDescription>
+                </SheetHeader>
               <div className="flex flex-col gap-6 p-6">
                 <Link href="/" className="flex items-center gap-2">
                     <Logo className="h-8 w-auto text-primary" />
