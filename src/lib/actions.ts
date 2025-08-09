@@ -65,8 +65,15 @@ export async function register(prevState: any, formData: FormData) {
         'Content-Type': 'application/json',
         'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf'
       },
-      // The backend requires a unique username, so we pass the name as the username.
-      body: JSON.stringify({ name, email, password, username: name, role: 'user' }),
+      // The backend has a unique index on a misspelled `usemame` field.
+      // We must send the user's name for both `name` and `usemame`.
+      body: JSON.stringify({ 
+        name, 
+        email, 
+        password, 
+        role: 'user',
+        usemame: name 
+      }),
     });
 
     const data: LoginResponse = await response.json();
