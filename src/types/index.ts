@@ -8,7 +8,9 @@ export interface User {
     token?: string; 
 }
 
-export interface LoginResponse extends User {
+export interface LoginResponse {
+    user: User;
+    token: string;
     message?: string;
 }
 

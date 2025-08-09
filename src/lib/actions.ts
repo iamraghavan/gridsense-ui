@@ -31,9 +31,9 @@ export async function login(prevState: any, formData: FormData) {
       return { error: data.message || 'Login failed' };
     }
 
-    if (data.token && data._id) {
-        await setSession(data.token, data);
-        return { success: true, user: data };
+    if (data.token && data.user?._id) {
+        await setSession(data.token, data.user);
+        return { success: true, user: data.user };
     } else {
         return { error: 'Login failed: No token or user ID received.' };
     }
@@ -76,14 +76,12 @@ export async function register(prevState: any, formData: FormData) {
     const data: LoginResponse = await response.json();
 
     if (!response.ok || response.status !== 201) {
-      // The backend may return a more specific error message in the 'message' field
       return { error: data.message || 'Registration failed. The email might already be in use.' };
     }
 
-    if (data.token && data._id) {
-        // Automatically log the user in upon successful registration
-        await setSession(data.token, data);
-        return { success: true, user: data };
+    if (data.token && data.user?._id) {
+        await setSession(data.token, data.user);
+        return { success: true, user: data.user };
     } else {
         return { error: 'Registration succeeded but no token was received.' };
     }
