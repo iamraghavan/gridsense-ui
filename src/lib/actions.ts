@@ -69,7 +69,7 @@ export async function register(prevState: any, formData: FormData) {
         name, 
         email, 
         password, 
-        role: 'user'
+        role: ''
       }),
     });
 
