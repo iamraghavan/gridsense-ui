@@ -8,7 +8,7 @@ interface ChannelsResponse {
   channels: Channel[];
 }
 
-// Lightweight 1
+// Lightweight 2
 // Lightweight version to get all channels without full history for faster page loads
 export async function getChannels(userId: string, token: string): Promise<ChannelsResponse | null> {
   if (!userId || !token) {
