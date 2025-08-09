@@ -182,4 +182,4 @@ function EditChannelClient({ channel }: EditChannelClientProps) {
   )
 }
 
-export default EditChannelClient;\
+export default EditChannelClient;
