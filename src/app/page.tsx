@@ -241,7 +241,7 @@ function Footer() {
 
 export default function Home() {
   return (
-    <div className="bg-background">
+    <div className="bg-background font-headline">
       <Header />
       <main>
         <HeroSection />
