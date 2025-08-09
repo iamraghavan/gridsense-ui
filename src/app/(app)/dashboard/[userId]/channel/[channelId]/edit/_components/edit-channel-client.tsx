@@ -164,7 +164,7 @@ function EditChannelClient({ channel }: EditChannelClientProps) {
                     </div>
                     ))}\
                 </div>
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', unit: '' })}>\
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', unit: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add another field
                 </Button>
@@ -173,13 +173,13 @@ function EditChannelClient({ channel }: EditChannelClientProps) {
 
             <div className="flex justify-end pt-4">
             <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}\
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
-            </Button>\
-            </div>\
-        </form>\
-    </Form>\
-  )\
-}\
-\
+            </Button>
+            </div>
+        </form>
+    </Form>
+  )
+}
+
 export default EditChannelClient;\
