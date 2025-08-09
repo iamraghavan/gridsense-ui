@@ -59,8 +59,8 @@ export default function RegisterPage() {
       <CardContent>
         <form action={formAction} className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="username">Full Name</Label>
-                <Input id="username" name="username" placeholder="John Doe" required />
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" name="name" placeholder="John Doe" required />
             </div>
              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
