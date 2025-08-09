@@ -3,13 +3,17 @@ export interface User {
     _id: string;
     name: string;
     email: string;
-    role: 'user' | 'admin';
+    role: 'user' | 'admin' | '';
     apiKey: string;
     token?: string; 
 }
 
 export interface LoginResponse {
-    user: User;
+    _id: string;
+    name: string;
+    email: string;
+    role: 'user' | 'admin' | '';
+    apiKey: string;
     token: string;
     message?: string;
 }
