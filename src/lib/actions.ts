@@ -65,14 +65,14 @@ export async function register(prevState: any, formData: FormData) {
         'Content-Type': 'application/json',
         'x-api-key': process.env.API_KEY || 'a0ea2188-ee2f-46d2-9661-310bed43c3bf'
       },
-      // The backend requires a unique username. We'll use the provided name for both.
-      body: JSON.stringify({ name: name, username: name, email: email, password: password, role: 'user' }),
+      body: JSON.stringify({ name, email, password, role: 'user' }),
     });
 
     const data: LoginResponse = await response.json();
 
     if (!response.ok || response.status !== 201) {
-      return { error: data.message || 'Registration failed' };
+      // The backend may return a more specific error message in the 'message' field
+      return { error: data.message || 'Registration failed. The email might already be in use.' };
     }
 
     if (data.token && data._id) {
@@ -80,7 +80,7 @@ export async function register(prevState: any, formData: FormData) {
         await setSession(data.token, data);
         return { success: true, user: data };
     } else {
-        return { error: 'Registration failed: No token or user ID received.' };
+        return { error: 'Registration succeeded but no token was received.' };
     }
 
   } catch (error) {
