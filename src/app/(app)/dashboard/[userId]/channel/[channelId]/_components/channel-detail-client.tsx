@@ -7,7 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfToday } from 'date-fns';
 import type { Channel, ChannelHistory, ChannelStats } from '@/types';
 import { useSocket } from '@/hooks/use-socket';
 import { ArrowLeft, Clock, Hash, Rss } from 'lucide-react';
@@ -66,14 +66,13 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
             const handleSensorUpdate = (update: { channelId: string; timestamp: string; data: Record<string, number>, entryId: string }) => {
                 if (update.channelId === channel.channel_id) {
                     const newHistoryEntry: ChannelHistory = {
-                        _id: update.entryId, // Assuming backend sends this
+                        _id: update.entryId,
                         channelId: update.channelId,
                         createdAt: update.timestamp,
                         data: update.data,
                     };
                     
-                    // Update all states together
-                    setHistory(prevHistory => [...prevHistory, newHistoryEntry]);
+                    setHistory(prevHistory => [...prevHistory, newHistoryEntry].sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
                     setLatestData(newHistoryEntry.data);
                     setStats(prevStats => ({
                         ...prevStats!,
@@ -91,29 +90,36 @@ export function ChannelDetailClient({ channel, initialHistory, initialStats, ini
     }, [socket, channel.channel_id]);
 
     const filteredHistory = useMemo(() => {
-        const now = new Date();
         if (timeRange === 'all') {
             return history;
         }
+        const today = startOfToday();
         let startDate: Date;
-        if (timeRange === '1d') {
-            startDate = subDays(now, 1);
-        } else if (timeRange === '7d') {
-            startDate = subDays(now, 7);
-        } else if (timeRange === '30d') {
-            startDate = subDays(now, 30);
-        } else {
-             return history;
+
+        switch(timeRange) {
+            case '1d':
+                startDate = subDays(today, 1);
+                break;
+            case '7d':
+                startDate = subDays(today, 7);
+                break;
+            case '30d':
+                startDate = subDays(today, 30);
+                break;
+            default:
+                return history;
         }
+        
         return history.filter(entry => new Date(entry.createdAt) >= startDate);
     }, [history, timeRange]);
 
-    const chartData = useMemo(() => 
-        filteredHistory.map(entry => ({
+    const chartData = useMemo(() => {
+        const formatString = timeRange === '1d' ? 'HH:mm' : 'MMM d, HH:mm';
+        return filteredHistory.map(entry => ({
             ...entry.data,
-            time: format(new Date(entry.createdAt), 'HH:mm'),
-        })), [filteredHistory]
-    );
+            time: format(new Date(entry.createdAt), formatString),
+        }));
+    }, [filteredHistory, timeRange]);
 
     const chartConfig = useMemo(() => {
         const config: any = {};
